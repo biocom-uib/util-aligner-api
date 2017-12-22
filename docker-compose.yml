@@ -7,7 +7,7 @@ services:
     networks:
       - util-net
     ports:
-      - 10080:8080
+      - 0.0.0.0:10080:8080
     volumes:
       - .:/opt/:rw
       - data:/opt/data
