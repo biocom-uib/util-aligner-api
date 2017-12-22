@@ -1,0 +1,8 @@
+aiohttp==2.2.5
+aiohttp_cors==0.5.3
+gunicorn==19.4.5
+alembic==0.9.6
+redis==2.10.5
+aiomysql==0.0.9
+SQLAlchemy==1.1.14
+ipython==6.2.1
