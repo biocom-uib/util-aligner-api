@@ -1,0 +1,4 @@
+# Local dependencies go here.
+-r base.txt
+
+ipython==6.2.1
