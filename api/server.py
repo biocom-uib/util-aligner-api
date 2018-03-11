@@ -15,22 +15,20 @@ def setup_routes(app):
 
 
 def setup_middlewares(app):
-    middlewares = [
-        json_middleware,
-        database_middleware
-    ]
-    for middleware in middlewares:
-        app.middlewares.append(middleware)
+    app.middlewares.append(json_middleware)
+    if os.environ['APP_ENV'] == 'local':  # pragma: nocover
+        app.middlewares.append(database_middleware)
 
 
 def on_startup_signal(app):
     if os.environ['APP_ENV'] == 'production':  # pragma: nocover
         app.on_startup.append(create_sentry)
-    app.on_startup.append(create_db_pool)
+        app.on_startup.append(create_db_pool)
 
 
 def on_cleanup_signal(app):
-    app.on_cleanup.append(dispose_db_pool)
+    if os.environ['APP_ENV'] == 'local':  # pragma: nocover
+        app.on_cleanup.append(dispose_db_pool)
     if os.environ['APP_ENV'] == 'production':  # pragma: nocover
         app.on_cleanup.append(dispose_sentry)
 
