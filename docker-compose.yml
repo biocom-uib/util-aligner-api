@@ -13,3 +13,6 @@ services:
     volumes:
       - .:/opt/:rw
       - data:/opt/data
+
+volumes:
+  data: {}
