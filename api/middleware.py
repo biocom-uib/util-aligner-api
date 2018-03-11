@@ -1,38 +1,13 @@
-import redis
-
 from json.decoder import JSONDecodeError
 
 from aiohttp import web
 
 
 @web.middleware
-async def cache_middleware(request, handler):
-    """
-    Redis connection acquisition and release is automatically
-    managed by StrictRedis:
-        - When a redis command is invoked using StrictRedis
-        a new connection is acquired from the pool, so the
-        connection is unique to each command execution
-        (set, get, incr...)
-        - The command is executed inside a try, except, finally block
-        - No matter what happens with the command execution
-        in the finally block there is a pool.release(connection),
-        so the connection is always released to the pool.
-        - Redis Connection pool is threadsafe
-    """
-    redis_pool = request.app['redis_pool']
-    request.cache = redis.StrictRedis(connection_pool=redis_pool)
-    return await handler(request)
-
-
-@web.middleware
 async def database_middleware(request, handler):
     master_pool = request.app['master_pool']
-    slave_pool = request.app['slave_pool']
-    async with master_pool.acquire() as master_connection, \
-            slave_pool.acquire() as slave_connection:
+    async with master_pool.acquire() as master_connection:
         request.db = master_connection
-        request.slave_db = slave_connection
         return await handler(request)
 
 

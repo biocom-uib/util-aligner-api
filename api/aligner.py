@@ -7,7 +7,7 @@ app_finished = Celery('finished', broker='amqp://localhost')
 
 
 def job_running(data):
-    pass
+    return False
 
 
 def append_email(data):
@@ -23,7 +23,7 @@ def get_results(db, data):
 
 
 def is_cached_job(data):
-    pass
+    return False, None
 
 
 def get_emails(data):
@@ -38,13 +38,12 @@ def server_create_job(data):
     if cached:
         return send_email(data, results, [data['email']])
     create_redis_job(data)
-    start_job.delay(data)
+    start_job(data)
 
 
 @app_create.task
 def start_job(data):
     pass
-    #requests.post(f"{data['aligner']}/align", data=data)
 
 
 @app_finished.task

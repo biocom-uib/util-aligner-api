@@ -25,6 +25,20 @@ if READ_DOT_ENV_FILE:
 # CACHING
 # -----------------------------------------------------------------------------
 REDIS_DSN = env('REDIS_DSN', default='redis 6379 0')
+REDIS_URL = env('REDIS_URL', default='redis://redis')
+MAX_SIZE_REDIS = env('MAX_SIZE_REDIS', default=10)
+
+
+# DATABASE
+# -----------------------------------------------------------------------------
+DATABASE_DSN = env('DB_DSN', 'mysql+pymysql://puser:puser@mysql/protein_db')
+DATABASE_HOST = env('DB_HOST', 'mysql')
+DATABASE_PORT = int(env('DB_PORT', 3306))
+DATABASE_USER = env('DB_USER', 'puser')
+DATABASE_PASSWORD = env('DB_PASS', 'puser')
+DATABASE_DB = env('DB_NAME', 'protein_db')
+DATABASE_MAXSIZE = env('DB_MAX_POOL', 50)
+
 
 # DEBUG
 # -----------------------------------------------------------------------------
@@ -34,8 +48,3 @@ DEBUG = env.bool('DEBUG', default=False)
 # -----------------------------------------------------------------------------
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@aligner.rabbitmq:5672//')
 CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE', default='util_aligner')
-
-# SENTRY CONFIGURATION
-# -----------------------------------------------------------------------------
-SENTRY_DSN = env('SENTRY_DSN')
-SENTRY_ENVIRON = env('SENTRY_ENVIRON', default='production')

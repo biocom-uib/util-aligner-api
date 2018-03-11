@@ -1,27 +1,24 @@
 import aiomysql
-import redis
-
-from settings import settings
+import aioredis
 
 
-async def _create_db_pool(max_connections=None, master=True):
-    db_conf = settings['database_async'] if master else settings['database_ro']
-    max_connections = max_connections or db_conf['pool']
+from config import config
+
+
+async def _create_db_pool(max_connections=None):
+    max_connections = max_connections or config['DATABASE_MAXSIZE']
     return await aiomysql.create_pool(
-        host=db_conf['host'], port=db_conf['port'], user=db_conf['user'],
-        password=db_conf['pwd'], db=db_conf['db'], charset='utf8', minsize=1,
+        host=config['DATABASE_HOST'], port=config['DATABASE_PORT'], user=config['DATABASE_USER'],
+        password=config['DATABASE_PASSWORD'], db=config['DATABASE_DB'], charset='utf8', minsize=1,
         maxsize=max_connections)
 
 
 async def create_db_pool(app):
     app['master_pool'] = await _create_db_pool()
-    app['slave_pool'] = await _create_db_pool(master=False)
 
 
 async def dispose_db_pool(app):
-    app['slave_pool'].close()
     app['master_pool'].close()
-    await app['slave_pool'].wait_closed()
     await app['master_pool'].wait_closed()
 
 
@@ -33,9 +30,9 @@ def create_sentry(app):
     base_dir = os.path.dirname(os.path.dirname(__file__))
 
     app['sentry'] = Client(
-        settings['sentry_dsn'],
+        config['SENTRY_DSN'],
         transport=AioHttpTransport,
-        environment=settings['env'],
+        environment=config['env'],
         release=fetch_git_sha(base_dir))
 
 
@@ -43,11 +40,11 @@ async def dispose_sentry(app):
     app['sentry'].remote.get_transport().close()
 
 
-def _create_cache_pool():
-    return redis.ConnectionPool(
-        **dict(zip(('host', 'port', 'db'), settings["redis"].split())),
-        max_connections=1000)
+async def _create_cache_pool():
+    return await aioredis.create_redis_pool(
+        config['REDIS_URL'],
+        maxsize=config['MAX_SIZE_REDIS'])
 
 
-def create_cache_pool(app):
-    app['redis_pool'] = _create_cache_pool()
+async def create_cache_pool(app):
+    app['redis_pool'] = await _create_cache_pool()
