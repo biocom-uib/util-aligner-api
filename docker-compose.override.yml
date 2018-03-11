@@ -5,6 +5,8 @@ services:
     build:
       args:
         APP_ENV: 'local'
+    networks:
+      - util-net
     depends_on:
       - rabbitmq
       - redis

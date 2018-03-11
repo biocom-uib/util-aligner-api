@@ -6,8 +6,6 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
     command: sh docker/gunicorn.sh
-    networks:
-      - util-net
     ports:
       - 10080:8080
     volumes:
