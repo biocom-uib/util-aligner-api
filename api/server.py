@@ -6,7 +6,7 @@ from aiohttp_cors import ResourceOptions, setup as setup_cors
 
 from api.middleware import database_middleware, json_middleware
 from api.routes import routes
-from api.signals import create_sentry, dispose_sentry, create_db_pool, create_cache_pool, dispose_db_pool
+from api.signals import create_sentry, dispose_sentry, create_db_pool, dispose_db_pool
 
 
 def setup_routes(app):
@@ -27,7 +27,6 @@ def on_startup_signal(app):
     if os.environ['APP_ENV'] == 'production':  # pragma: nocover
         app.on_startup.append(create_sentry)
     app.on_startup.append(create_db_pool)
-    #app.on_startup.append(create_cache_pool)
 
 
 def on_cleanup_signal(app):

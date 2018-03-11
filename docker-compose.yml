@@ -5,13 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-      args:
-        APP_ENV: 'local'
     command: sh docker/gunicorn.sh
-    depends_on:
-      - rabbitmq
-      - redis
-      - mysql
     networks:
       - util-net
     ports:
@@ -19,42 +13,3 @@ services:
     volumes:
       - .:/opt/:rw
       - data:/opt/data
-
-  mysql:
-      image: mysql:5.7.17
-      ports:
-        - 3308:3306
-      command:
-        - --character-set-server=utf8
-        - --collation-server=utf8_unicode_ci
-        - --skip-character-set-client-handshake
-      volumes:
-        - mysql-data:/var/lib/mysql
-        - ./dumps:/opt/dumps
-      environment:
-        - MYSQL_ROOT_PASSWORD=root
-        - MYSQL_DATABASE=protein_db
-        - MYSQL_USER=puser
-        - MYSQL_PASSWORD=puser
-      networks:
-        - util-net
-
-  redis:
-    image: redis:4-alpine
-    volumes:
-    - redis-data:/data
-    networks:
-    - util-net
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    networks:
-      - util-net
-
-networks:
-  util-net: {}
-
-volumes:
-  data: {}
-  redis-data: {}
-  mysql-data: {}
