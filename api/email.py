@@ -33,7 +33,7 @@ def send_email(data, results, emails):
         msg['To'] = email
         server.send_message(msg)
     tmp_file = write_results(results)
-    
+
     with open(tmp_file) as fp:
         record = MIMEBase('application', 'octet-stream')
         record.set_payload(fp.read())
