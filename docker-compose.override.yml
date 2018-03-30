@@ -8,28 +8,7 @@ services:
     networks:
       - util-net
     depends_on:
-      - rabbitmq
       - redis
-      - mysql
-
-  mysql:
-      image: mysql:5.7.17
-      ports:
-        - 3308:3306
-      command:
-        - --character-set-server=utf8
-        - --collation-server=utf8_unicode_ci
-        - --skip-character-set-client-handshake
-      volumes:
-        - mysql-data:/var/lib/mysql
-        - ./dumps:/opt/dumps
-      environment:
-        - MYSQL_ROOT_PASSWORD=root
-        - MYSQL_DATABASE=protein_db
-        - MYSQL_USER=puser
-        - MYSQL_PASSWORD=puser
-      networks:
-        - util-net
 
   redis:
     image: redis:4-alpine
@@ -38,14 +17,10 @@ services:
     networks:
     - util-net
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    networks:
-      - util-net
 
 networks:
-  util-net: {}
+  util-net:
+    external: true
 
 volumes:
   redis-data: {}
-  mysql-data: {}

@@ -2,6 +2,7 @@
 Base settings for Util Aligner API.
 """
 import environs
+from kombu import Queue
 from pathlib import Path
 
 
@@ -22,23 +23,6 @@ if READ_DOT_ENV_FILE:
     env.read_env(env_file, False)
     print('The .env file has been loaded. See base.py for more information')
 
-# CACHING
-# -----------------------------------------------------------------------------
-REDIS_DSN = env('REDIS_DSN', default='redis 6379 0')
-REDIS_URL = env('REDIS_URL', default='redis://redis')
-MAX_SIZE_REDIS = env('MAX_SIZE_REDIS', default=10)
-
-
-# DATABASE
-# -----------------------------------------------------------------------------
-DATABASE_DSN = env('DB_DSN', 'mysql+pymysql://puser:puser@mysql/protein_db')
-DATABASE_HOST = env('DB_HOST', 'mysql')
-DATABASE_PORT = int(env('DB_PORT', 3306))
-DATABASE_USER = env('DB_USER', 'puser')
-DATABASE_PASSWORD = env('DB_PASS', 'puser')
-DATABASE_DB = env('DB_NAME', 'protein_db')
-DATABASE_MAXSIZE = env('DB_MAX_POOL', 50)
-
 
 # DEBUG
 # -----------------------------------------------------------------------------
@@ -46,5 +30,10 @@ DEBUG = env.bool('DEBUG', default=False)
 
 # CELERY
 # -----------------------------------------------------------------------------
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@aligner.rabbitmq:5672//')
-CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE', default='util_aligner')
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@rabbitmq:5672//')
+CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE', default='server_default')
+ALIGNMENT_QUEUE = env('ALIGNMENT_QUEUE', default='server_default')
+CELERY_TASK_QUEUES = [
+    Queue('server_default', routing_key='server_default',
+          queue_arguments={'x-max-priority': 10})
+]

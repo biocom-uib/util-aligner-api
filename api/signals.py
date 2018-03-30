@@ -1,6 +1,6 @@
 import aiomysql
 import aioredis
-
+from celery import Celery
 
 from config import config
 
@@ -48,3 +48,9 @@ async def _create_cache_pool():
 
 async def create_cache_pool(app):
     app['redis_pool'] = await _create_cache_pool()
+
+
+async def create_celery_app(app):
+    celery_app = Celery()
+    celery_app.config_from_object(config, namespace='CELERY')
+    app['celery'] = celery_app
