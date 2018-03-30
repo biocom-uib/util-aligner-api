@@ -1,53 +1,61 @@
-import aiohttp_cors
+
+import os
+
 from aiohttp import web
-import logging
+from aiohttp_cors import ResourceOptions, setup as setup_cors
 
+from api.middleware import database_middleware, json_middleware
 from api.routes import routes
-from api.middleware import middleware_cache
-
-from settings import settings
-
-logger = logging.getLogger(__name__)
+from api.signals import (create_sentry, dispose_sentry, create_db_pool, dispose_db_pool,
+                         create_celery_app)
 
 
-app = web.Application(
-    middlewares=[
-        middleware_cache,
-    ]
-)
-app.settings = settings
+def setup_routes(app):
+    for route in routes:
+        app.router.add_route(*route)
 
 
-
-# Add routes
-for route in routes:
-    app.router.add_route(*route)
-
-# Configure default CORS settings.
-cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(
-        allow_credentials=True,
-        expose_headers="*",
-        allow_headers="*",
-    )
-})
+def setup_middlewares(app):
+    app.middlewares.append(json_middleware)
+    if os.environ['APP_ENV'] == 'local':  # pragma: nocover
+        app.middlewares.append(database_middleware)
 
 
-# Configure CORS on all routes.
-for route in list(app.router.routes()):
-    cors.add(route)
+def on_startup_signal(app):
+    app.on_startup.append(create_celery_app)
+    app.on_startup.append(create_db_pool)
+
+    if os.environ['APP_ENV'] == 'production':  # pragma: nocover
+        app.on_startup.append(create_sentry)
 
 
-# This is useful if you want to launch default aiohttp
-# server without gunicorn worker
-#
-# PYTHONPATH=. python user/server.py
-if __name__ == '__main__':
-    import logging
+def on_cleanup_signal(app):
+    if os.environ['APP_ENV'] == 'local':  # pragma: nocover
+        app.on_cleanup.append(dispose_db_pool)
+    if os.environ['APP_ENV'] == 'production':  # pragma: nocover
+        app.on_cleanup.append(dispose_sentry)
 
-    access_log = logging.getLogger('aiohttp.access')
-    access_log.setLevel(logging.INFO)
-    stdout_handler = logging.StreamHandler()
-    access_log.addHandler(stdout_handler)
 
-    web.run_app(app)
+def init_cors(app):
+    return setup_cors(app, defaults={
+        "*": ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+        )
+    })
+
+
+def init():
+    app = web.Application()
+    cors = init_cors(app)
+    setup_routes(app)
+    setup_middlewares(app)
+    for route in app.router.routes():
+        cors.add(route)
+    on_startup_signal(app)
+    on_cleanup_signal(app)
+    return app
+
+
+app = init()

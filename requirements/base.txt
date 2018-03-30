@@ -1,0 +1,12 @@
+alembic==0.9.6
+aiomysql==0.0.9
+SQLAlchemy==1.1.14
+cchardet==2.1.1
+aiodns==1.1.1
+aiohttp_cors==0.7.0
+celery==4.1.0
+uvloop==0.9.1
+gunicorn==19.7.1
+environs==2.1.0
+raven==6.6.0
+aioredis==1.1.0

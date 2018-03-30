@@ -1,0 +1,7 @@
+# Local dependencies go here.
+-r base.txt
+
+ipython==6.2.1
+aiohttp==3.0.6
+# TODO: get back pypi package when issue 27 is resolved (https://github.com/getsentry/raven-aiohttp/issues/27)
+git+git://github.com/getsentry/raven-aiohttp.git@master

@@ -2,26 +2,15 @@ version: '3'
 
 services:
   api:
-    build: .
-    command: gunicorn api.server:app -c settings_gunicorn.py
-    networks:
-      - util-net
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    command: sh docker/gunicorn.sh
     ports:
       - 10080:8080
     volumes:
       - .:/opt/:rw
       - data:/opt/data
 
-  redis:
-    image: redis:4-alpine
-    volumes:
-    - redis-data:/data
-    networks:
-    - util-net
-
-networks:
-  util-net: {}
-
 volumes:
   data: {}
-  redis-data: {}
