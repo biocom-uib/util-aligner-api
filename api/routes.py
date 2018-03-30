@@ -9,6 +9,8 @@ selectors = [
 
 jobs = [
     ['POST', '/util-aligner/create-job', jobs.create_job],
+    ['POST', '/util-aligner/finished-job', jobs.finished_job],
+
 ]
 
 routes = [robots] + selectors + jobs
