@@ -28,11 +28,12 @@ def send_email(data, results, emails):
         msg['From'] = EMAIL_FROM
         msg.preamble = 'Results for alignment'
         body = f"Results for align {data['net1']} with {data['net2']} using {data['aligner']}"
+        body += str(results)
         msg.attach(MIMEText(body))
         msg.attach(record)
         msg['To'] = email
         server.send_message(msg)
-    tmp_file = write_results(results)
+    tmp_file = write_results(results.get('results', {}).get('alignment', [{}]))
 
     with open(tmp_file) as fp:
         record = MIMEBase('application', 'octet-stream')

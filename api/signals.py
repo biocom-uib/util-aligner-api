@@ -1,5 +1,7 @@
 import aiomysql
 import aioredis
+import motor.motor_asyncio
+
 from celery import Celery
 
 from config import config
@@ -54,3 +56,8 @@ async def create_celery_app(app):
     celery_app = Celery()
     celery_app.config_from_object(config, namespace='CELERY')
     app['celery'] = celery_app
+
+
+async def create_mongo(app):
+    client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://mongo:27017')
+    app['mongo_db'] = client.util_aligner

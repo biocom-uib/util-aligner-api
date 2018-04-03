@@ -6,13 +6,14 @@ async def create_job(request):
     data = request.post_json
     await server_create_job(request.app['master_pool'],
                             request.app['redis_pool'], request.app['celery'],
-                            data)
+                            request.app['mongo_db'], data)
     return Response(body='New job created',
                     status=200)
 
 
 async def finished_job(request):
     data = request.post_json
-    await server_finished_job(request.app['master_pool'],
-                              request.app['redis_pool'], data['job_id'])
+    await server_finished_job(request.app['mongo_db'],
+                              request.app['redis_pool'], data['job_id'],
+                              data['result_id'])
     return Response(status=200)

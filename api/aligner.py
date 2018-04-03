@@ -1,3 +1,5 @@
+from bson.objectid import ObjectId
+
 from api.email import send_email
 from config import config
 from uuid import uuid4
@@ -27,16 +29,15 @@ async def create_redis_job(cache_connection, data):
     await cache_connection.set(str(data['job_id']), data_key)
 
 
-async def get_results(db, data):
-    return [{data['net1']: f'node_{i}', data['net2']: f'node_{i}'}
-            for i in range(100)]
+async def get_results(db, result_id):
+    return await db.results.find_one({'_id': ObjectId(result_id)})
 
 
-async def get_cached_job(db, cache_connection, data):
+async def get_cached_job(db, cache_connection, mongo_db, data):
     job_id = await cache_connection.get(create_data_key(data))
     if job_id:
         if job_id == b'FINISHED':
-            return None, await get_results(db, data)
+            return None, await get_results(mongo_db, data)
         return job_id.decode('utf-8'), None
     return False, None
 
@@ -60,8 +61,10 @@ async def get_data_from_job_id(cache_connection, job_id):
     return data, emails
 
 
-async def server_create_job(db, cache_connection, queue_connection, data):
-    job_id, results = await get_cached_job(db, cache_connection, data)
+async def server_create_job(db, cache_connection, queue_connection, mongo_db,
+                            data):
+    job_id, results = await get_cached_job(db, cache_connection, mongo_db,
+                                           data)
     if results:
         return send_email(data, results, [data['mail']])
     if job_id:
@@ -78,7 +81,7 @@ def start_job(data, queue_connection):
                                queue_arguments={'x-max-priority': 10})
 
 
-async def server_finished_job(db, cache_connection, job_id):
+async def server_finished_job(db, cache_connection, job_id, result_id):
     data, emails = await get_data_from_job_id(cache_connection, job_id)
-    results = await get_results(db, data)
+    results = await get_results(db, result_id)
     return send_email(data, results, emails)
