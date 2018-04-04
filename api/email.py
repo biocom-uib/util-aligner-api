@@ -1,5 +1,5 @@
 import smtplib
-from csv import DictWriter
+import csv
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -15,8 +15,7 @@ EMAIL_PASSWORD = config['EMAIL_PASSWORD']
 
 def write_results(results):
     with NamedTemporaryFile(delete=False, mode='w') as tmpfile:
-        writer = DictWriter(tmpfile, results[0].keys())
-        writer.writeheader()
+        writer = csv.writer(tmpfile)
         writer.writerows(results)
         return tmpfile.name
 
