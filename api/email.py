@@ -1,5 +1,5 @@
 import smtplib
-import csv
+from csv import writer as csv_writer
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -13,9 +13,10 @@ EMAIL_FROM = config['EMAIL_FROM']
 EMAIL_PASSWORD = config['EMAIL_PASSWORD']
 
 
-def write_results(results):
+def write_results(results_header, results):
     with NamedTemporaryFile(delete=False, mode='w') as tmpfile:
-        writer = csv.writer(tmpfile)
+        writer = csv_writer(tmpfile)
+        writer.writerow(results_header)
         writer.writerows(results)
         return tmpfile.name
 
@@ -32,7 +33,10 @@ def send_email(data, results, emails):
         msg.attach(record)
         msg['To'] = email
         server.send_message(msg)
-    tmp_file = write_results(results.get('results', {}).get('alignment', [{}]))
+
+    results_header = results.get('results', {}).get('alignment_header', [])
+    results = results.get('results', {}).get('alignment', [])
+    tmp_file = write_results(results_header, results)
 
     with open(tmp_file) as fp:
         record = MIMEBase('application', 'octet-stream')
