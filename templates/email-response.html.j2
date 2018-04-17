@@ -1,0 +1,190 @@
+<?doctype html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <style type="text/css">
+      body {
+        font-family: sans-serif;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin-left: 2em;
+      }
+
+      th, td {
+        border: 1px solid #d0d0d0;
+        padding: 0.8em;
+      }
+
+      td.htheader {
+        background-color: #eeeeee;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <p>
+    {% if results['ok'] %}
+      The alignment you requested has finished successfully with exit code {{ results['exit_code'] }}.
+    {% elif scores is defined %}
+      The alignment you requested has finished with errors (exit code {{ results['exit_code'] }}).
+    {% else %}
+      The alignment you requested has failed.
+    {% endif %}
+    </p>
+
+    <h2>
+      Requested alignment information
+    </h2>
+    <table>
+      <tr>
+        <td class=htheader>
+          Aligner
+        </td>
+        <td>
+          {% if aligner_params is defined %}
+            {{ aligner }}
+            {% for param, value in aligner_params %}
+              {{ joiner(', ') }}
+              {{ param ~ '=' ~ value }}
+            {% endfor %}
+          {% else %}
+            {{ aligner }}
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td class=htheader>
+          Database
+        </td>
+        <td>
+          {{ db }}
+        </td>
+      </tr>
+      <tr>
+        <td class=htheader>
+          Net 1
+        </td>
+        <td>
+          {{ net1 }} ({{ n_vert1 }} nodes, {{ n_edges1 }} edges)
+        </td>
+      </tr>
+      <tr>
+        <td class=htheader>
+          Net 2
+        </td>
+        <td>
+          {{ net2 }} ({{ n_vert2 }} nodes, {{ n_edges2 }} edges)
+        </td>
+      </tr>
+      {% if 'run_time' in results %}
+      <tr>
+        <td class=htheader>
+          Run time
+        </td>
+        <td>
+          {{ results['run_time'] }} seconds
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+
+    {% if scores is defined %}
+      {% if 'ec_score' in scores['ec_data'] %}
+      <h2>
+        Topological information
+      </h2>
+      <table>
+        <tr>
+          <td class=htheader>
+            EC score
+          </td>
+          <td>
+            {{ scores['ec_data']['ec_score'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Preserved edges
+          </td>
+          <td>
+            {{ scores['ec_data']['num_preserved_edges'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Non-preserved edges
+          </td>
+          <td>
+            {{ scores['ec_data']['non_preserved_edges']|length }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Non-reflected edges
+          </td>
+          <td>
+            {{ scores['ec_data']['non_reflected_edges']|length }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Unaligned nodes
+          </td>
+          <td>
+            {{ scores['ec_data']['unaligned_nodes_net1']|length }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Unaligned edges
+          </td>
+          <td>
+            {{ scores['ec_data']['unaligned_edges_net1']|length }}
+          </td>
+        </tr>
+      </table>
+      {% endif %}
+
+      {% if 'fc_data' in scores and 'fc_score' in scores['fc_data'] %}
+      <h2>
+        Functional information
+      </h2>
+      <table>
+        <tr>
+          <td class=htheader>
+            FC score
+          </td>
+          <td>
+            {{ scores['fc_data']['fc_score'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Unannotated proteins in net 1
+          </td>
+          <td>
+            {{ scores['fc_data']['unannotated_prots_net1']|length }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Unannotated proteins in net 2
+          </td>
+          <td>
+            {{ scores['fc_data']['unannotated_prots_net2']|length }}
+          </td>
+        </tr>
+      </table>
+      {% endif %}
+
+      <figure>
+        <img src="cid:ann_freq_hists.png" alt="Annotation frequencies for {{ net1 }}" />
+        <figcaption>Annotation count frequencies</figcaption>
+      </figure>
+    {% endif %}
+  </body>
+</html>

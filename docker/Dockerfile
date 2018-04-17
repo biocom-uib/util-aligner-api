@@ -8,7 +8,10 @@ ENV PYTHONUNBUFFERED=1
 # Requirements have to be pulled and installed here, otherwise caching won't work
 COPY ./requirements /requirements
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-    && apk add --no-cache --virtual .build-deps gcc g++ make git \
+    && apk add --update --no-cache freetype libpng openblas libstdc++ \
+    && apk add --no-cache --virtual .build-deps gcc g++ make git freetype-dev libpng-dev openblas-dev \
+    && ln -s /usr/include/locale.h /usr/include/xlocale.h \
+    && pip install numpy==1.13.3 \
     && pip install -r /requirements/${APP_ENV}.txt \
     && rm -rf /requirements \
     && apk del .build-deps
