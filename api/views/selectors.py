@@ -25,7 +25,7 @@ async def get_networks(request):
 
 
 async def get_aligners(request):
-    data = {'data': ['AligNet', 'Pinalog', 'Spinal']}
+    data = {'data': sorted(['HubAlign', 'AligNet', 'PINALOG', 'SPINAL', 'L-GRAAL'])}
     headers = settings.get('HEADERS')
     return Response(body=json.dumps(data),
                     content_type="application/json",

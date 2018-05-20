@@ -10,3 +10,10 @@ gunicorn==19.7.1
 environs==2.1.0
 raven==6.6.0
 aioredis==1.1.0
+aiohttp==3.0.6
+raven-aiohttp==0.7.0
+pymongo
+motor
+Jinja2==2.10
+matplotlib==2.1.0
+seaborn==0.8.1
