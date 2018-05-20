@@ -36,9 +36,11 @@ async def get_results(db, result_id):
 async def get_cached_job(db, cache_connection, mongo_db, data):
     job_id = await cache_connection.get(create_data_key(data))
     if job_id:
-        if job_id == b'FINISHED':
-            return None, await get_results(mongo_db, data)
-        return job_id.decode('utf-8'), None
+        job_id = job_id.decode('utf-8')
+        if job_id.startswith("FINISHED_"):
+            result_id = job_id[len("FINISHED_"):]
+            return None, await get_results(mongo_db, result_id)
+        return job_id, None
     return False, None
 
 
@@ -46,10 +48,12 @@ def get_emails(data):
     return ['adria.alcala@gmail.com']
 
 
-async def get_data_from_job_id(cache_connection, job_id):
+async def get_data_from_job_id(cache_connection, job_id, result_id):
     data_key = await cache_connection.get(job_id)
     emails = await cache_connection.get(create_email_key(job_id))
-    await cache_connection.set(data_key, 'FINISHED')
+
+    await cache_connection.set(data_key, f"FINISHED_{result_id}")
+
     db, net1, net2, aligner = data_key.decode('utf-8').split('_')
     data = {
         'db': db,
@@ -82,6 +86,6 @@ def start_job(data, queue_connection):
 
 
 async def server_finished_job(db, cache_connection, job_id, result_id):
-    data, emails = await get_data_from_job_id(cache_connection, job_id)
+    data, emails = await get_data_from_job_id(cache_connection, job_id, result_id)
     results = await get_results(db, result_id)
     return send_email(data, results, emails)
