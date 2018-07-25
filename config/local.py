@@ -18,10 +18,10 @@ MAX_SIZE_REDIS = env('MAX_SIZE_REDIS', default=10)
 
 # DATABASE
 # -----------------------------------------------------------------------------
-DATABASE_DSN = env('DB_DSN', 'mysql+pymysql://puser:puser@mysql/protein_db')
-DATABASE_HOST = env('DB_HOST', 'mysql')
-DATABASE_PORT = int(env('DB_PORT', 3306))
-DATABASE_USER = env('DB_USER', 'puser')
-DATABASE_PASSWORD = env('DB_PASS', 'puser')
-DATABASE_DB = env('DB_NAME', 'protein_db')
-DATABASE_MAXSIZE = env('DB_MAX_POOL', 50)
+DATABASE_DSN = env('DATABASE_DSN', 'mysql+pymysql://puser:puser@mysql/protein_db')
+DATABASE_HOST = env('DATABASE_HOST', 'mysql')
+DATABASE_PORT = int(env('DATABASE_PORT', 3306))
+DATABASE_USER = env('DATABASE_USER', 'puser')
+DATABASE_PASSWORD = env('DATABASE_PASSWORD', 'puser')
+DATABASE_DB = env('DATABASE_NAME', 'protein_db')
+DATABASE_MAXSIZE = env('DATABASE_MAX_POOL', 50)

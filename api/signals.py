@@ -59,5 +59,5 @@ async def create_celery_app(app):
 
 
 async def create_mongo(app):
-    client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://mongo:27017')
+    client = motor.motor_asyncio.AsyncIOMotorClient(config['MONGODB_URL'])
     app['mongo_db'] = client.util_aligner

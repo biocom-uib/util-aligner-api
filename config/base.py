@@ -34,5 +34,9 @@ CELERY_TASK_QUEUES = [
     Queue('server_default', routing_key='server_default',
           queue_arguments={'x-max-priority': 10})
 ]
+
 EMAIL_FROM = env('EMAIL_FROM')
 EMAIL_PASSWORD = env('EMAIL_PASSWORD')
+
+# MONGO
+MONGODB_URL = env('MONGODB_URL', default='mongodb://mongo/util_aligner')
