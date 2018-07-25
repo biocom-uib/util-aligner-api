@@ -37,7 +37,7 @@ def write_result_files(response):
     if 'output' in results:
         output = results['output']
 
-        with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.csv') as tmpfile:
+        with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.log') as tmpfile:
             tmpfile.write(output)
             files['output.log'] = (tmpfile.name, False, ('text','plain'))
 
