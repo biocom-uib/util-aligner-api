@@ -9,7 +9,7 @@ ENV PYTHONUNBUFFERED=1
 COPY ./requirements /requirements
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
     && apk add --update --no-cache freetype libpng openblas libstdc++ \
-    && apk add --no-cache --virtual .build-deps gcc g++ make git freetype-dev libpng-dev openblas-dev \
+    && apk add --no-cache --virtual .build-deps gcc g++ make git libffi libffi-dev openssl openssl-dev freetype-dev libpng-dev openblas-dev \
     && ln -s /usr/include/locale.h /usr/include/xlocale.h \
     && pip install numpy==1.13.3 \
     && pip install -r /requirements/${APP_ENV}.txt \
