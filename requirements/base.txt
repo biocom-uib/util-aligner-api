@@ -17,3 +17,4 @@ motor==2.0.0
 Jinja2==2.10
 matplotlib==2.1.0
 seaborn==0.8.1
+PyMySQL==0.8.1

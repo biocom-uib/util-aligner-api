@@ -1,6 +1,6 @@
 from aiohttp.web import Response
 from api.aligner import server_create_job, server_finished_job
-from api.request import adapt_data
+from api.request.request import adapt_data
 
 
 async def create_job(request):
