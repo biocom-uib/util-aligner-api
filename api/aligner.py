@@ -40,17 +40,19 @@ async def create_redis_job(cache_connection, data):
     await cache_connection.set(str(data['job_id']), data_key)
 
 
-async def get_results(db, result_id):
-    return await db.results.find_one({'_id': ObjectId(result_id)})
+async def get_results(mongo_db, mongo_gridfs, result_id):
+    fd = await mongo_gridfs.open_download_stream(ObjectId(result_id))
+    json_str = await fd.read()
+    return json.loads(json_str)
 
 
-async def get_cached_job(db, cache_connection, mongo_db, data):
+async def get_cached_job(db, cache_connection, mongo_db, mongo_gridfs, data):
     job_id = await cache_connection.get(create_data_key(data))
     if job_id:
         job_id = job_id.decode('utf-8')
         if job_id.startswith("FINISHED_"):
             result_id = job_id[len("FINISHED_"):]
-            return None, await get_results(mongo_db, result_id)
+            return None, await get_results(mongo_db, mongo_gridfs, result_id)
         return job_id, None
     return False, None
 
@@ -59,27 +61,19 @@ def get_emails(data):
     return ['adria.alcala@gmail.com']
 
 
-async def get_data_from_job_id(cache_connection, job_id, result_id):
+async def get_emails_from_job_id(cache_connection, job_id, result_id):
     data_key = await cache_connection.get(job_id)
     emails = await cache_connection.get(create_email_key(job_id))
 
     await cache_connection.set(data_key, f"FINISHED_{result_id}")
 
-    db, net1, net2, aligner = data_key.decode('utf-8').split('_')
-    data = {
-        'db': db,
-        'net1': net1,
-        'net2': net2,
-        'aligner': aligner
-    }
-    emails = emails.decode('utf-8').split(',')
-    return data, emails
+    return emails.decode('utf-8').split(',')
 
 
 async def server_create_job(db, cache_connection, queue_connection, mongo_db,
-                            data):
+                            mongo_gridfs, data):
     job_id, results = await get_cached_job(db, cache_connection, mongo_db,
-                                           data)
+                                           mongo_gridfs, data)
     if results:
         return send_email(data, results, [data['mail']])
     if job_id:
@@ -96,7 +90,7 @@ def start_job(data, queue_connection):
                                queue_arguments={'x-max-priority': 10})
 
 
-async def server_finished_job(db, cache_connection, job_id, result_id):
-    data, emails = await get_data_from_job_id(cache_connection, job_id, result_id)
-    results = await get_results(db, result_id)
+async def server_finished_job(mongo_db, mongo_gridfs, cache_connection, job_id, result_id):
+    emails = await get_emails_from_job_id(cache_connection, job_id, result_id)
+    results = await get_results(mongo_db, mongo_gridfs, result_id)
     return send_email(data, results, emails)

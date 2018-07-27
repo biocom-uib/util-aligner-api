@@ -178,7 +178,7 @@ def write_ann_freqs(response):
     return files
 
 
-def send_email(data, response, emails):
+def send_email(response, emails):
     template = JINJA2_ENV.get_template('email-response.html.j2')
     email_body = template.render(**response)
 
