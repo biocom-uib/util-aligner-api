@@ -1,5 +1,5 @@
 alembic==0.9.6
-aiomysql==0.0.9
+aiomysql==0.0.19
 SQLAlchemy==1.1.14
 cchardet==2.1.1
 aiodns==1.1.1
@@ -17,3 +17,4 @@ motor==2.0.0
 Jinja2==2.10
 matplotlib==2.1.0
 seaborn==0.8.1
+PyMySQL==0.8.1

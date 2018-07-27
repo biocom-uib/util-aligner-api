@@ -1,3 +1,5 @@
+import hashlib
+import json
 from bson.objectid import ObjectId
 
 from api.email import send_email
@@ -17,7 +19,16 @@ def create_email_key(job_id):
 
 
 def create_data_key(data):
-    return f"{data['db']}_{data['net1']}_{data['net2']}_{data['aligner']}"
+    mail = data.pop('mail')
+    job_id = None
+    if 'job_id' in data:
+        job_id = data.pop('job_id')
+    data_dump = json.dumps(data, sort_keys=True)
+    sha1 = hashlib.sha1(data_dump.encode('utf-8'))
+    data['mail'] = mail
+    if job_id:
+        data['job_id'] = job_id
+    return sha1.hexdigest()
 
 
 async def create_redis_job(cache_connection, data):
