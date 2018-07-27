@@ -1,6 +1,7 @@
+from asyncio import get_event_loop
+from bson.objectid import ObjectId
 import hashlib
 import json
-from bson.objectid import ObjectId
 
 from api.email import send_email
 from config import config
@@ -75,7 +76,9 @@ async def server_create_job(db, cache_connection, queue_connection, mongo_db,
     job_id, results = await get_cached_job(db, cache_connection, mongo_db,
                                            mongo_gridfs, data)
     if results:
-        return send_email(data, results, [data['mail']])
+        get_event_loop().create_task(
+            send_email(results, [data['mail']]))
+
     if job_id:
         await append_email(cache_connection, job_id, data['mail'])
         return
@@ -93,4 +96,6 @@ def start_job(data, queue_connection):
 async def server_finished_job(mongo_db, mongo_gridfs, cache_connection, job_id, result_id):
     emails = await get_emails_from_job_id(cache_connection, job_id, result_id)
     results = await get_results(mongo_db, mongo_gridfs, result_id)
-    return send_email(data, results, emails)
+
+    get_event_loop().create_task(
+        send_email(results, emails))
