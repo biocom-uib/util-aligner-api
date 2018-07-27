@@ -25,6 +25,10 @@ print('The .env file has been loaded. See base.py for more information')
 # -----------------------------------------------------------------------------
 DEBUG = env.bool('DEBUG', default=False)
 
+# HTTP
+# -----------------------------------------------------------------------------
+CLIENT_MAX_SIZE = env('CLIENT_MAX_SIZE', 512 * 1024**2) # 512 MB
+
 # CELERY
 # -----------------------------------------------------------------------------
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@rabbitmq:5672//')

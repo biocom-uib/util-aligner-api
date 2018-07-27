@@ -9,6 +9,8 @@ from api.routes import routes
 from api.signals import (create_sentry, dispose_sentry, create_db_pool, dispose_db_pool,
                          create_celery_app, create_cache_pool, create_mongo)
 
+from config import config
+
 
 def setup_routes(app):
     for route in routes:
@@ -49,7 +51,7 @@ def init_cors(app):
 
 
 def init():
-    app = web.Application()
+    app = web.Application(client_max_size=config['CLIENT_MAX_SIZE'])
     cors = init_cors(app)
     setup_routes(app)
     setup_middlewares(app)
