@@ -36,6 +36,12 @@
     {% endif %}
     </p>
 
+    {% if results['exception'] %}
+    <p>
+      The following exception was caught during execution: {{ results['exception'] }}
+    </p>
+    {% endif %}
+
     <h2>
       Requested alignment information
     </h2>
@@ -119,7 +125,7 @@
             Non-preserved edges
           </td>
           <td>
-            {{ scores['ec_data']['non_preserved_edges']|length }}
+            {{ scores['ec_data']['num_non_preserved_edges'] }}
           </td>
         </tr>
         <tr>
@@ -127,7 +133,7 @@
             Non-reflected edges
           </td>
           <td>
-            {{ scores['ec_data']['non_reflected_edges']|length }}
+            {{ scores['ec_data']['num_non_reflected_edges'] }}
           </td>
         </tr>
         <tr>
@@ -135,7 +141,7 @@
             Unaligned nodes
           </td>
           <td>
-            {{ scores['ec_data']['unaligned_nodes_net1']|length }}
+            {{ scores['ec_data']['num_unaligned_nodes_net1'] }}
           </td>
         </tr>
         <tr>
@@ -143,25 +149,37 @@
             Unaligned edges
           </td>
           <td>
-            {{ scores['ec_data']['unaligned_edges_net1']|length }}
+            {{ scores['ec_data']['num_unaligned_edges_net1'] }}
           </td>
         </tr>
       </table>
       {% endif %}
 
-      {% if 'fc_data' in scores and 'fc_score' in scores['fc_data'] %}
+      {% if 'fc_data' in scores %}
       <h2>
         Functional information
       </h2>
       <table>
+        {% if 'fc_score_jaccard' in scores['fc_data'] %}
         <tr>
           <td class=htheader>
-            FC score
+            FC score (Jaccard)
           </td>
           <td>
-            {{ scores['fc_data']['fc_score'] }}
+            {{ scores['fc_data']['fc_score_jaccard'] }}
           </td>
         </tr>
+        {% endif %}
+        {% if 'fc_score_hrss_bma' in scores['fc_data'] %}
+        <tr>
+          <td class=htheader>
+            FC score (HRSS/BMA)
+          </td>
+          <td>
+            {{ scores['fc_data']['fc_score_hrss_bma'] }}
+          </td>
+        </tr>
+        {% endif %}
         <tr>
           <td class=htheader>
             Unannotated proteins in net 1

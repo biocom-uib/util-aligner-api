@@ -42,9 +42,7 @@ async def create_redis_job(cache_connection, data):
 
 
 async def get_results(mongo_db, mongo_gridfs, result_id):
-    fd = await mongo_gridfs.open_download_stream(ObjectId(result_id))
-    json_str = await fd.read()
-    return json.loads(json_str)
+    return await mongo_db.results.find_one({'_id': ObjectId(result_id)})
 
 
 async def get_cached_job(db, cache_connection, mongo_db, mongo_gridfs, data):
@@ -77,7 +75,7 @@ async def server_create_job(db, cache_connection, queue_connection, mongo_db,
                                            mongo_gridfs, data)
     if results:
         get_event_loop().create_task(
-            send_email(results, [data['mail']]))
+            send_email(results, [data['mail']], mongo_gridfs))
 
     if job_id:
         await append_email(cache_connection, job_id, data['mail'])
@@ -98,4 +96,4 @@ async def server_finished_job(mongo_db, mongo_gridfs, cache_connection, job_id, 
     results = await get_results(mongo_db, mongo_gridfs, result_id)
 
     get_event_loop().create_task(
-        send_email(results, emails))
+        send_email(results, emails, mongo_gridfs))
