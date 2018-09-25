@@ -5,7 +5,7 @@ import re
 
 def get_species_id(net):
     try:
-        return int(net['net_id'])
+        return int(net['species_id'])
     except ValueError:
         return None
 
