@@ -16,7 +16,7 @@ def get_network_data(data, input_network=True):
     if data[net]['edges'] is None:
         data = {
             'species_id': get_species_id(data[net]),
-            'score_thresholds': data[net]['stringdb_score_thresholds'],
+            'score_thresholds': data[net]['score_thresholds'],
             'edges': None
         }
     else:
