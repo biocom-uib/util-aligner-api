@@ -20,6 +20,7 @@ def adapt_data(raw_data):
         'net1': get_network_data(raw_data),
         'net2': get_network_data(raw_data, input_network=False),
         'aligner': raw_data['aligner'],
+        'aligner_params': raw_data.get('aligner_params', {}),
         'mail': raw_data['mail'],
     }
     return data
