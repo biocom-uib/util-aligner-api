@@ -1,6 +1,6 @@
 FROM python:3.6-alpine
 
-ARG APP_ENV=production
+ARG APP_ENV=prod
 
 ENV APP_ENV=$APP_ENV
 ENV PYTHONUNBUFFERED=1
