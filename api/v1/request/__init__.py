@@ -1,5 +1,5 @@
-from api.request.stringdb import get_network_data as get_stringdb_network_data
-from api.constants import String
+from api.v1.request.stringdb import get_network_data as get_stringdb_network_data
+from api.v1.constants import String
 
 
 ADAPTER_DISPATCHER = {

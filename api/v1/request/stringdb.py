@@ -2,7 +2,7 @@ from csv import reader as csv_reader
 from io import StringIO
 import re
 
-from api.constants import PERSONALIZED_NETWORK
+from api.v1.constants import PERSONALIZED_NETWORK
 
 
 def get_species_id(net):
