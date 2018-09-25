@@ -204,5 +204,90 @@
         <figcaption>Annotation count frequencies</figcaption>
       </figure>
     {% endif %}
+
+    {% if files is defined %}
+    <h2>Supplementary files</h2>
+      <table>
+        <tr>
+          <th>Content</th>
+          <th>Link</th>
+        </tr>
+        </tr>
+        {% if 'alignment' in results and results['alignment'] is none %}
+          <tr>
+            <td class=htheader>
+              Alignment
+            </td>
+            <td>
+              <a href="{{base_url}}/file/{{ files['alignment_tsv'] }}">(tsv)</a>
+            </td>
+          </tr>
+        {% endif %}
+        {% if scores is defined and 'ec_data' in scores %}
+          {% if 'non_preserved_edges' in scores['ec_data'] and scores['ec_data']['non_preserved_edges'] is none %}
+            <tr>
+              <td class=htheader>
+                Non-preserved edges
+              </td>
+              <td>
+                <a href="{{base_url}}/file/{{ files['non_preserved_edges_tsv'] }}">(tsv)</a>
+              </td>
+            </tr>
+          {% endif %}
+          {% if 'non_preserved_edges' in scores['ec_data'] and scores['ec_data']['non_preserved_edges'] is none %}
+            <tr>
+              <td class=htheader>
+                Non-preserved edges
+              </td>
+              <td>
+                <a href="{{base_url}}/file/{{ files['non_reflected_edges_tsv'] }}">(tsv)</a>
+              </td>
+            </tr>
+          {% endif %}
+        {% endif %}
+        {% if scores is defined and 'fc_data' in scores %}
+          {% if 'fc_values_jaccard' in scores['fc_data'] and scores['fc_data']['fc_values_jaccard'] is none %}
+            <tr>
+              <td class=htheader>
+                Pairwise Jaccard similarities
+              </td>
+              <td>
+                <a href="{{base_url}}/file/{{ files['fc_values_jaccard_tsv'] }}">(tsv)</a>
+              </td>
+            </tr>
+          {% endif %}
+          {% if 'fc_values_hrss_bma' in scores['fc_data'] and scores['fc_data']['fc_values_hrss_bma'] is none %}
+            <tr>
+              <td class=htheader>
+                Pairwise HRSS/BMA similarities
+              </td>
+              <td>
+                <a href="{{base_url}}/file/{{ files['fc_values_hrss_bma_tsv'] }}">(tsv)</a>
+              </td>
+            </tr>
+          {% endif %}
+          {% if 'unannotated_prots_net1' in scores['fc_data'] and scores['fc_data']['unannotated_prots_net1'] is none %}
+            <tr>
+              <td class=htheader>
+                Unannotated proteins in net1
+              </td>
+              <td>
+                <a href="{{base_url}}/file/{{ files['unannotated_prots_net1_tsv'] }}">(tsv)</a>
+              </td>
+            </tr>
+          {% endif %}
+          {% if 'unannotated_prots_net2' in scores['fc_data'] and scores['fc_data']['unannotated_prots_net2'] is none %}
+            <tr>
+              <td class=htheader>
+                Unannotated proteins in net2
+              </td>
+              <td>
+                <a href="{{base_url}}/file/{{ files['unannotated_prots_net2_tsv'] }}">(tsv)</a>
+              </td>
+            </tr>
+          {% endif %}
+        {% endif %}
+      </table>
+    {% endif %}
   </body>
 </html>

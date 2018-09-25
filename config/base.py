@@ -39,6 +39,9 @@ CELERY_TASK_QUEUES = [
           queue_arguments={'x-max-priority': 10})
 ]
 
+SERVER_URL = env('SERVER_URL')
+BASE_PATH = env('BASE_PATH')
+
 EMAIL_FROM = env('EMAIL_FROM')
 EMAIL_PASSWORD = env('EMAIL_PASSWORD')
 

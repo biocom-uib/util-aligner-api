@@ -3,7 +3,7 @@ from bson.objectid import ObjectId
 import hashlib
 import json
 
-from api.email import send_email
+from api.email import send_email_suspended
 from config import config
 from uuid import uuid4
 
@@ -33,17 +33,18 @@ def create_data_key(data):
 
 
 async def create_redis_job(cache_connection, data):
-    data['job_id'] = uuid4()
-    email_key = create_email_key(data['job_id'])
+    job_id = uuid4();
+    data['job_id'] = job_id
+    email_key = create_email_key(job_id)
     await cache_connection.set(email_key, data['mail'])
     data_key = create_data_key(data)
-    await cache_connection.set(data_key, str(data['job_id']))
-    await cache_connection.set(str(data['job_id']), data_key)
+    await cache_connection.set(data_key, str(job_id))
+    await cache_connection.set(str(job_id), data_key)
+    return str(job_id)
 
 
 async def get_results(mongo_db, mongo_gridfs, result_id):
     return await mongo_db.results.find_one({'_id': ObjectId(result_id)})
-
 
 async def get_cached_job(db, cache_connection, mongo_db, mongo_gridfs, data):
     job_id = await cache_connection.get(create_data_key(data))
@@ -53,11 +54,7 @@ async def get_cached_job(db, cache_connection, mongo_db, mongo_gridfs, data):
             result_id = job_id[len("FINISHED_"):]
             return None, await get_results(mongo_db, mongo_gridfs, result_id)
         return job_id, None
-    return False, None
-
-
-def get_emails(data):
-    return ['adria.alcala@gmail.com']
+    return None, None
 
 
 async def get_emails_from_job_id(cache_connection, job_id, result_id):
@@ -74,15 +71,19 @@ async def server_create_job(db, cache_connection, queue_connection, mongo_db,
     job_id, results = await get_cached_job(db, cache_connection, mongo_db,
                                            mongo_gridfs, data)
     if results:
-        get_event_loop().create_task(
-            send_email(results, [data['mail']], mongo_gridfs))
+        print('alignment already computed, sending email')
+        get_event_loop().create_task(send_email_suspended(results, [data['mail']], mongo_gridfs))
 
-    if job_id:
+    elif job_id:
         await append_email(cache_connection, job_id, data['mail'])
-        return
+        print('alignment already queued, added email address to mailing')
 
-    await create_redis_job(cache_connection, data)
-    start_job(data, queue_connection)
+    else:
+        job_id = await create_redis_job(cache_connection, data)
+        start_job(data, queue_connection)
+        print('submited new job:', data)
+
+    return job_id
 
 
 def start_job(data, queue_connection):
@@ -95,5 +96,4 @@ async def server_finished_job(mongo_db, mongo_gridfs, cache_connection, job_id, 
     emails = await get_emails_from_job_id(cache_connection, job_id, result_id)
     results = await get_results(mongo_db, mongo_gridfs, result_id)
 
-    get_event_loop().create_task(
-        send_email(results, emails, mongo_gridfs))
+    get_event_loop().create_task(send_email_suspended(results, emails, mongo_gridfs))
