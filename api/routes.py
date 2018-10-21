@@ -23,7 +23,8 @@ jobs = [
     ['POST', f'{BASE_PATH}/v1/finished-job', v1.jobs.finished_job],
 
     ['POST', f'{BASE_PATH}/v2/create-job',   v2.jobs.create_job],
-    ['POST', f'{BASE_PATH}/v2/finished-job', v2.jobs.finished_job],
+    ['POST', f'{BASE_PATH}/v2/finished-alignment', v2.jobs.finished_alignment],
+    ['POST', f'{BASE_PATH}/v2/finished-comparison', v2.jobs.finished_comparison],
 ]
 
 routes = [robots] + selectors + jobs

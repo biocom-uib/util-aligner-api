@@ -33,9 +33,14 @@ CLIENT_MAX_SIZE = env('CLIENT_MAX_SIZE', 512 * 1024**2) # 512 MB
 # -----------------------------------------------------------------------------
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@rabbitmq:5672//')
 CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE', default='server_default')
-ALIGNMENT_QUEUE = env('ALIGNMENT_QUEUE', default='server_default')
+ALIGNMENT_QUEUE = env('ALIGNMENT_QUEUE', default='server_aligner')
+MULTIPLE_QUEUE = env('MULTIPLE_QUEUE', default='server_comparer')
 CELERY_TASK_QUEUES = [
     Queue('server_default', routing_key='server_default',
+          queue_arguments={'x-max-priority': 10})
+    Queue(ALIGNMENT_QUEUE, routing_key=ALIGNMENT_QUEUE,
+          queue_arguments={'x-max-priority': 10})
+    Queue(MULTIPLE_QUEUE, routing_key=MULTIPLE_QUEUE,
           queue_arguments={'x-max-priority': 10})
 ]
 

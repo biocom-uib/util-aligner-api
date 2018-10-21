@@ -1,7 +1,7 @@
 from aiohttp.web import Response
 import json
 
-from api.aligner import server_create_job, server_finished_job
+from api.aligner import server_create_job, server_finished_job, server_finished_multiple_job
 from api.v2.request import adapt_data
 
 from config import get_config
@@ -24,6 +24,14 @@ async def create_job(request):
 
 
 async def finished_job(request):
+    data = request.post_json
+    await server_finished_job(request.app['mongo_db'], request.app['mongo_gridfs'],
+                              request.app['redis_pool'], data['job_id'],
+                              data['result_id'])
+    return Response(status=200)
+
+
+async def finished_multiple_job(request):
     data = request.post_json
     await server_finished_job(request.app['mongo_db'], request.app['mongo_gridfs'],
                               request.app['redis_pool'], data['job_id'],

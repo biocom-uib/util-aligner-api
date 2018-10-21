@@ -13,7 +13,7 @@ from config import config
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from matplotlib import use as matplotlib_use
+from matplotlib import use as matplotlib_use, cloase as matplotlib_close
 matplotlib_use('Agg')
 from matplotlib.pyplot import figure as matplotlib_figure
 from seaborn import set as seaborn_set
@@ -30,33 +30,26 @@ JINJA2_ENV = Environment(
 
 
 async def prepare_attachment_tsv(mongo_gridfs, response, obj, key, header=None):
-    if key in obj:
-        value = obj[key]
+    value = obj.get(key)
 
-        if value is None:
-            pass
-            ## now sent as a link
+    ## now sent as a link
+    if value is None:
+        return {}
 
-            # with NamedTemporaryFile(delete=False, mode='wb', suffix='.tmp.tsv') as tmpfile:
-            #     await mongo_gridfs.download_to_stream(ObjectId(response['files'][key+'_tsv']), tmpfile)
-            #     tmpfile_name = tmpfile.name
+    with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.tsv') as tmpfile:
+        writer = csv_writer(tmpfile, delimiter='\t')
+
+        if header is None:
+            writer.writerows(value)
+        elif len(header) > 1:
+            writer.writerow(header)
+            writer.writerows(value)
         else:
-            with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.tsv') as tmpfile:
-                writer = csv_writer(tmpfile, delimiter='\t')
+            writer.writerows((item,) for item in value)
 
-                if header is None:
-                    writer.writerows(value)
-                elif len(header) > 1:
-                    writer.writerow(header)
-                    writer.writerows(value)
-                else:
-                    writer.writerows((item,) for item in value)
+        tmpfile_name = tmpfile.name
 
-                tmpfile_name = tmpfile.name
-
-            return {key+'.tsv': (tmpfile_name, False, ('text','csv'))}
-
-    return {}
+    return {key+'.tsv': (tmpfile_name, False, ('text', 'csv'))}
 
 
 async def write_result_files(response, mongo_gridfs):
@@ -72,10 +65,13 @@ async def write_result_files(response, mongo_gridfs):
 
         with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.log') as tmpfile:
             tmpfile.write(output)
-            files['output.log'] = (tmpfile.name, False, ('text','plain'))
+            files['output.log'] = (tmpfile.name, False, ('text', 'plain'))
 
     files.update(
         await prepare_attachment_tsv(mongo_gridfs, response, results, 'alignment'))
+
+    files.update(
+        await prepare_attachment_tsv(mongo_gridfs, response, results, 'joined_alignments'))
 
     if 'scores' in response:
         scores = response['scores']
@@ -87,6 +83,7 @@ async def write_result_files(response, mongo_gridfs):
             files.update(await write_fc_data(response, mongo_gridfs))
 
     return files
+
 
 async def write_ec_data(response, mongo_gridfs):
     files = {}
@@ -124,6 +121,7 @@ async def write_fc_data(response, mongo_gridfs):
         files.update(write_ann_freqs(response))
 
     return files
+
 
 def write_ann_freqs(response):
     files = {}
@@ -182,6 +180,7 @@ def write_ann_freqs(response):
 
         fig.tight_layout()
         fig.savefig(tmpfile.name)
+        matplotlib_close(fig)
         files['ann_freq_hists.png'] = (tmpfile.name, True, ('image','png'))
 
     return files
@@ -190,6 +189,16 @@ def write_ann_freqs(response):
 async def send_email_suspended(response, emails, mongo_gridfs):
     await asyncio_sleep(0)
     return await send_email(response, emails, mongo_gridfs)
+
+
+async def send_email_comparison_suspended(response, emails, mongo_gridfs):
+    await asyncio_sleep(0)
+    return await send_email_comparison(response, emails, mongo_gridfs)
+
+
+async def send_email_comparison(response, emails, mongo_gridfs):
+    pass
+
 
 async def send_email(response, emails, mongo_gridfs):
     template = JINJA2_ENV.get_template('email-response.html.j2')
@@ -200,7 +209,6 @@ async def send_email(response, emails, mongo_gridfs):
     inline_files = []
     attachments = []
 
-    #total_size = sum(path.getsize(f) for f, inline, mime_type in tmp_files.values())
 
     for attachment_name, (tmp_file, inline, mime_type) in tmp_files.items():
         with open(tmp_file, 'rb') as fp:
@@ -245,3 +253,14 @@ async def send_email(response, emails, mongo_gridfs):
     server.quit()
 
     print('sent')
+
+
+async def send_email_comparison(response, emails, mongo_gridfs):
+    await asyncio_sleep(0)
+    return await send_email_comparison(response, emails, mongo_gridfs)
+
+
+async def send_email(response, emails, mongo_gridfs):
+    pass
+
+
