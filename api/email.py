@@ -13,7 +13,7 @@ from config import config
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from matplotlib import use as matplotlib_use, cloase as matplotlib_close
+from matplotlib import use as matplotlib_use
 matplotlib_use('Agg')
 from matplotlib.pyplot import figure as matplotlib_figure
 from seaborn import set as seaborn_set

@@ -6,7 +6,7 @@ import json
 from api.email import send_email_suspended, send_email_comparison_suspended
 from config import config
 from uuid import uuid4
-from constants import MULTIPLE_ALIGNMENT_FINSIHED, PROCESS_TASK, MULTIPLE_ALIGNER_TASK, QUEUE_DISPATCHER
+from api.constants import MULTIPLE_ALIGNMENT_FINSIHED, PROCESS_TASK, MULTIPLE_ALIGNER_TASK, QUEUE_DISPATCHER
 
 
 async def append_email(cache_connection, job_id, mail):

@@ -37,9 +37,9 @@ ALIGNMENT_QUEUE = env('ALIGNMENT_QUEUE', default='server_aligner')
 MULTIPLE_QUEUE = env('MULTIPLE_QUEUE', default='server_comparer')
 CELERY_TASK_QUEUES = [
     Queue('server_default', routing_key='server_default',
-          queue_arguments={'x-max-priority': 10})
+          queue_arguments={'x-max-priority': 10}),
     Queue(ALIGNMENT_QUEUE, routing_key=ALIGNMENT_QUEUE,
-          queue_arguments={'x-max-priority': 10})
+          queue_arguments={'x-max-priority': 10}),
     Queue(MULTIPLE_QUEUE, routing_key=MULTIPLE_QUEUE,
           queue_arguments={'x-max-priority': 10})
 ]
