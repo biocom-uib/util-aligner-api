@@ -8,6 +8,7 @@ from config import get_config
 
 settings = get_config()
 
+
 async def create_job(request):
     data = request.post_json
     data = adapt_data(data)
@@ -26,14 +27,14 @@ async def create_job(request):
 async def finished_job(request):
     data = request.post_json
     await server_finished_job(request.app['mongo_db'], request.app['mongo_gridfs'],
-                              request.app['redis_pool'], data['job_id'],
-                              data['result_id'])
+                              request.app['redis_pool'], request.app['celery'],
+                              data['job_id'], data['result_id'])
     return Response(status=200)
 
 
 async def finished_multiple_job(request):
     data = request.post_json
-    await server_finished_job(request.app['mongo_db'], request.app['mongo_gridfs'],
-                              request.app['redis_pool'], data['job_id'],
-                              data['result_id'])
+    await server_finished_multiple_job(request.app['mongo_db'], request.app['mongo_gridfs'],
+                                       request.app['redis_pool'], data['job_id'],
+                                       data['result_id'])
     return Response(status=200)

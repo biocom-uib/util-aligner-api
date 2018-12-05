@@ -8,6 +8,7 @@ from config import config
 from uuid import uuid4
 from constants import MULTIPLE_ALIGNMENT_FINSIHED, PROCESS_TASK, MULTIPLE_ALIGNER_TASK, QUEUE_DISPATCHER
 
+
 async def append_email(cache_connection, job_id, mail):
     email_key = create_email_key(job_id)
     previous_emails = await cache_connection.get(email_key)
@@ -46,6 +47,7 @@ async def create_redis_job(cache_connection, data):
 async def get_results(mongo_db, mongo_gridfs, result_id):
     return await mongo_db.results.find_one({'_id': ObjectId(result_id)})
 
+
 async def get_cached_job(db, cache_connection, mongo_db, mongo_gridfs, data):
     job_id = await cache_connection.get(create_data_key(data))
     if job_id:
@@ -66,8 +68,8 @@ async def get_emails_from_job_id(cache_connection, job_id, result_id):
     return emails.decode('utf-8').split(',')
 
 
-async def server_create_job_one_aligner(db, cache_connection, queue_connection, mongo_db,
-                            mongo_gridfs, data):
+async def server_create_job_one_aligner(db, cache_connection, queue_connection,
+                                        mongo_db, mongo_gridfs, data):
     job_id, results = await get_cached_job(db, cache_connection, mongo_db,
                                            mongo_gridfs, data)
     if results:
@@ -86,19 +88,18 @@ async def server_create_job_one_aligner(db, cache_connection, queue_connection, 
     return job_id
 
 
-async def server_create_job_one_aligner(db, cache_connection, queue_connection, mongo_db,
-                            mongo_gridfs, data):
+async def server_create_job(db, cache_connection, queue_connection, mongo_db, mongo_gridfs, data):
     aligners = []
-    jobs_ids = []
+    job_ids = []
     for aligner in data['aligners']:
         data['aligner'] = aligner
         job_id = server_create_job_one_aligner(db, cache_connection, queue_connection, mongo_db,
                                                mongo_gridfs, data)
-        jobs_ids.append(job_id)
+        job_ids.append(job_id)
         aligners.append(aligner)
     if len(aligners) > 1:
         await create_redis_multiple_alignment(cache_connection, job_ids)
-    return jobs_id
+    return job_ids
 
 
 def start_job(data, queue_connection, task=PROCESS_TASK):
@@ -107,7 +108,8 @@ def start_job(data, queue_connection, task=PROCESS_TASK):
                                queue_arguments={'x-max-priority': 10})
 
 
-async def server_finished_job(mongo_db, mongo_gridfs, cache_connection, job_id, result_id):
+async def server_finished_job(mongo_db, mongo_gridfs, cache_connection, queue_connection, job_id, result_id):
+    await cache_connection.set(f'RESULT_ID_{job_id}', result_id)
     emails = await get_emails_from_job_id(cache_connection, job_id, result_id)
     results = await get_results(mongo_db, mongo_gridfs, result_id)
     pending, jobs_id = await check_pending_alignments(cache_connection, job_id)
@@ -116,27 +118,33 @@ async def server_finished_job(mongo_db, mongo_gridfs, cache_connection, job_id, 
     get_event_loop().create_task(send_email_suspended(results, emails, mongo_gridfs))
 
 
-async def create_redis_multiple_alignment(cache_connection, jobs_ids):
+async def create_redis_multiple_alignment(cache_connection, job_ids):
     job_id = uuid4()
-    for simple_job_id in jobs_ids:
+    for simple_job_id in job_ids:
         await cache_connection.set(f'MULTIPLE_{simple_job_id}', job_id)
-    await cache_connection.set(f'PENDING_{job_id}', json.dumps(job_ids))
+    await cache_connection.set(f'DONE_{job_id}', '[]')
     await cache_connection.set(f'ALL_{job_id}', json.dumps(job_ids))
 
 
 async def check_pending_alignments(cache_connection, job_id):
     multiple_job_id = await cache_connection.get(f'MULTIPLE_{job_id}')
     pending = None
+    result_jobs = []
     if multiple_job_id:
-        pass
-    return pending, {'results_object_ids': [], 'job_id': multiple_job_id}
-    
+        done_jobs = json.loads(await cache_connection.get(f'DONE_{multiple_job_id}'))
+        done_jobs.append(job_id)
+        all_jobs = json.loads(await cache_connection.get(f'ALL_{multiple_job_id}'))
+        if set(done_jobs) == set(all_jobs):
+            pending = MULTIPLE_ALIGNMENT_FINSIHED
+            result_jobs = [await cache_connection.get(f'RESULT_ID_{done_job}') for done_job in done_jobs]
+    return pending, {'results_object_ids': result_jobs, 'job_id': multiple_job_id}
 
-async def server_finished_aligner(mongo_db, mongo_gridfs, cache_connection, job_id, result_id):
+
+async def server_finished_multiple(mongo_db, mongo_gridfs, cache_connection, job_id, result_id):
     emails = await get_emails_from_job_id(cache_connection, job_id, result_id)
     results = await get_results(mongo_db, mongo_gridfs, result_id)
-    get_event_loop().create_task(send_email_suspended_comparison(results, emails, mongo_gridfs))
+    get_event_loop().create_task(send_email_comparison_suspended(results, emails, mongo_gridfs))
 
 
 async def server_finished_multiple_job(mongo_db, mongo_gridfs, cache_connection, job_id, result_id):
-    await server_finished_job(mongo_db, mongo_gridfs, cache_connection, job_id, result_id):
+    await server_finished_multiple(mongo_db, mongo_gridfs, cache_connection, job_id, result_id)

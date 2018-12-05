@@ -99,6 +99,7 @@ async def write_ec_data(response, mongo_gridfs):
 
     return files
 
+
 async def write_fc_data(response, mongo_gridfs):
     files = {}
 
@@ -156,7 +157,7 @@ def write_ann_freqs(response):
 
     with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.png') as tmpfile:
         fig = matplotlib_figure()
-        axes = [[None, None], [None,None]]
+        axes = [[None, None], [None, None]]
 
         for i in range(2):
             ax = fig.add_subplot(2, 2, 1+i)
@@ -253,14 +254,3 @@ async def send_email(response, emails, mongo_gridfs):
     server.quit()
 
     print('sent')
-
-
-async def send_email_comparison(response, emails, mongo_gridfs):
-    await asyncio_sleep(0)
-    return await send_email_comparison(response, emails, mongo_gridfs)
-
-
-async def send_email(response, emails, mongo_gridfs):
-    pass
-
-
