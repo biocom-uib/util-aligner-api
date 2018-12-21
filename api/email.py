@@ -15,7 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from matplotlib import use as matplotlib_use
 matplotlib_use('Agg')
-from matplotlib.pyplot import figure as matplotlib_figure
+from matplotlib.pyplot import figure as matplotlib_figure, close as matplotlib_close
 from seaborn import set as seaborn_set
 seaborn_set()
 
@@ -52,43 +52,10 @@ async def prepare_attachment_tsv(mongo_gridfs, response, obj, key, header=None):
     return {key+'.tsv': (tmpfile_name, False, ('text', 'csv'))}
 
 
-async def write_result_files(response, mongo_gridfs):
+async def write_ec_data(response, scores_key, mongo_gridfs):
     files = {}
 
-    if 'results' not in response:
-        return files
-
-    results = response['results']
-
-    if 'output' in results:
-        output = results['output']
-
-        with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.log') as tmpfile:
-            tmpfile.write(output)
-            files['output.log'] = (tmpfile.name, False, ('text', 'plain'))
-
-    files.update(
-        await prepare_attachment_tsv(mongo_gridfs, response, results, 'alignment'))
-
-    files.update(
-        await prepare_attachment_tsv(mongo_gridfs, response, results, 'joined_alignments'))
-
-    if 'scores' in response:
-        scores = response['scores']
-
-        if 'ec_data' in scores:
-            files.update(await write_ec_data(response, mongo_gridfs))
-
-        if 'fc_data' in scores:
-            files.update(await write_fc_data(response, mongo_gridfs))
-
-    return files
-
-
-async def write_ec_data(response, mongo_gridfs):
-    files = {}
-
-    scores = response['scores']
+    scores = response[scores_key]
     ec_data = scores['ec_data']
 
     files.update(
@@ -100,10 +67,10 @@ async def write_ec_data(response, mongo_gridfs):
     return files
 
 
-async def write_fc_data(response, mongo_gridfs):
+async def write_fc_data(response, scores_key, mongo_gridfs):
     files = {}
 
-    scores = response['scores']
+    scores = response[scores_key]
     fc_data = scores['fc_data']
 
     files.update(
@@ -119,15 +86,15 @@ async def write_fc_data(response, mongo_gridfs):
         await prepare_attachment_tsv(mongo_gridfs, response, fc_data, 'unannotated_prots_net2', header=('unannotated proteins in net2',)))
 
     if 'ann_freqs_net1' in fc_data and 'ann_freqs_net2' in fc_data:
-        files.update(write_ann_freqs(response))
+        files.update(write_ann_freqs(response, scores_key))
 
     return files
 
 
-def write_ann_freqs(response):
+def write_ann_freqs(response, scores_key):
     files = {}
 
-    scores = response['scores']
+    scores = response[scores_key]
     fc_data = scores['fc_data']
 
     ann_freqs_net1 = [(int(ann_cnt), freq) for ann_cnt, freq in fc_data['ann_freqs_net1'].items()]
@@ -187,31 +154,79 @@ def write_ann_freqs(response):
     return files
 
 
-async def send_email_suspended(response, emails, mongo_gridfs):
-    await asyncio_sleep(0)
-    return await send_email(response, emails, mongo_gridfs)
+async def write_scores_result_files(response, scores_key, mongo_gridfs):
+    files = {}
+
+    if scores_key in response:
+        scores = response[scores_key]
+
+        if 'ec_data' in scores:
+            files.update(await write_ec_data(response, scores_key, mongo_gridfs))
+
+        if 'fc_data' in scores:
+            files.update(await write_fc_data(response, scores_key, mongo_gridfs))
+
+    return files
+
+async def write_alignment_result_files(response, mongo_gridfs):
+    files = {}
+
+    if 'results' not in response:
+        return files
+
+    results = response['results']
+
+    if 'output' in results:
+        output = results['output']
+
+        with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.log') as tmpfile:
+            tmpfile.write(output)
+            files['output.log'] = (tmpfile.name, False, ('text', 'plain'))
+
+    files.update(
+        await prepare_attachment_tsv(mongo_gridfs, response, results, 'alignment'))
+
+    files.update(
+        await write_scores_result_files(response, 'scores', mongo_gridfs))
+
+    return files
 
 
-async def send_email_comparison_suspended(response, emails, mongo_gridfs):
-    await asyncio_sleep(0)
-    return await send_email_comparison(response, emails, mongo_gridfs)
+async def write_comparison_result_files(response, mongo_gridfs):
+    files =  {}
 
+    files.update(
+        await write_scores_result_files(response, 'consensus_scores', mongo_gridfs))
+
+    return files
+
+
+async def send_email_alignment(response, emails, mongo_gridfs):
+    await send_email(
+        response,
+        emails,
+        subject = f"Alignment with {response['aligner']} finished",
+        template_name = 'email-alignment-response.html.j2',
+        files = await write_alignment_result_files(response, mongo_gridfs))
 
 async def send_email_comparison(response, emails, mongo_gridfs):
-    pass
+    await send_email(
+        response,
+        emails,
+        subject = "Alignment comparison finished",
+        template_name = 'email-comparison-response.html.j2',
+        files = await write_comparison_result_files(response, mongo_gridfs))
 
 
-async def send_email(response, emails, mongo_gridfs):
-    template = JINJA2_ENV.get_template('email-response.html.j2')
+async def send_email(response, emails, subject, template_name, files=dict()):
+    template = JINJA2_ENV.get_template(template_name)
 
     email_body = template.render(**response, base_url=BASE_URL)
 
-    tmp_files = await write_result_files(response, mongo_gridfs)
     inline_files = []
     attachments = []
 
-
-    for attachment_name, (tmp_file, inline, mime_type) in tmp_files.items():
+    for attachment_name, (tmp_file, inline, mime_type) in files.items():
         with open(tmp_file, 'rb') as fp:
             record = MIMEBase(*mime_type)
             record.set_payload(fp.read())
@@ -228,10 +243,9 @@ async def send_email(response, emails, mongo_gridfs):
 
     def _send_email(email):
         msg = MIMEMultipart('mixed')
-        msg['Subject'] = f'Alignment with {response["aligner"]} finished'
+        msg['Subject'] = subject
         msg['From'] = EMAIL_FROM
         msg['To'] = email
-        msg.preamble = 'Results for alignment'
 
         body = MIMEMultipart('related')
         body.attach(MIMEText(email_body, 'html'))
@@ -253,4 +267,4 @@ async def send_email(response, emails, mongo_gridfs):
     list(map(_send_email, emails))
     server.quit()
 
-    print('sent')
+    print(f"sent {subject}")
