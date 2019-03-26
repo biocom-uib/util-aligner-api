@@ -1,5 +1,7 @@
-from asyncio import get_event_loop, Lock
+from asyncio import get_event_loop
+from aioredlock import Aioredlock, LockError
 from bson.objectid import ObjectId
+from contextlib import asynccontextmanager
 from copy import deepcopy
 import hashlib
 import json
@@ -9,8 +11,21 @@ from config import config
 from uuid import uuid4
 from api.v2.constants import PROCESS_TASK, COMPARE_TASK, QUEUE_DISPATCHER
 
-DATA_CACHE_LOCK = Lock()
-JOB_GROUPS_LOCK = Lock()
+LOCK_MANAGER = None
+DATA_CACHE_LOCK = "DATA_CACHE_LOCK"
+JOB_GROUPS_LOCK = "JOB_GROUPS_LOCK"
+
+
+@asynccontextmanager
+async def locked(cache_connection, lock_key):
+    global LOCK_MANAGER
+
+    if LOCK_MANAGER is None:
+        LOCK_MANAGER = Aioredlock(redis_connections=[cache_connection], lock_timeout=3600, retry_count=300)
+
+    async with await LOCK_MANAGER.lock(lock_key) as lock:
+        assert lock.valid
+        yield
 
 
 def create_job_id():
@@ -66,7 +81,7 @@ async def create_redis_job_if_needed(cache_connection, data, emails=[]):
     new_job_id = create_job_id()
 
     # reserve cache_key for job_id if not already present
-    with await DATA_CACHE_LOCK:
+    async with locked(cache_connection, DATA_CACHE_LOCK):
         await cache_connection.set(data_key, new_job_id, exist=cache_connection.SET_IF_NOT_EXIST)
         job_id = await cache_connection.get(data_key)
         job_id = job_id.decode('utf-8')
@@ -111,7 +126,7 @@ def submit_task(data, queue_connection, task=PROCESS_TASK):
 
 
 async def create_redis_job_group(cache_connection, group_id, job_ids, email):
-    with await JOB_GROUPS_LOCK:
+    async with locked(cache_connection, JOB_GROUPS_LOCK):
         print(f"initializing job group {group_id} with jobs {job_ids}")
 
         for job_id in job_ids:
@@ -121,14 +136,50 @@ async def create_redis_job_group(cache_connection, group_id, job_ids, email):
         await append_email(cache_connection, group_id, email)
 
 
-async def delete_redis_job_group(cache_connection, group_id):
+async def get_job_group_status(cache_connection, group_id):
+    async with locked(cache_connection, JOB_GROUPS_LOCK):
+        return await _get_job_group_status(cache_connection, group_id)
+
+
+# JOB_GROUPS_LOCK locked
+async def _get_job_group_status(cache_connection, group_id):
+    njobs_exists = await cache_connection.exists(f'NJOBS_{group_id}')
+    done_exists = await cache_connection.exists(f'DONE_{group_id}')
+
+    if done_exists:
+        # all completed
+        done = await cache_connection.lrange(f'DONE_{group_id}', 0, -1)
+        done = [done_job.decode('utf-8') for done_job in done]
+    else:
+        done = []
+
+    if njobs_exists:
+        njobs = int(await cache_connection.get(f'NJOBS_{group_id}'))
+    elif done_exists:
+        njobs = len(done)
+    else:
+        njobs = 0
+
+    if done and len(done) == njobs:
+        results = {job_id: await get_job_result_id(cache_connection, job_id) for job_id in done}
+    else:
+        results = {}
+
+    return {'njobs': njobs, 'done': done, 'results': results}
+
+
+# JOB_GROUPS_LOCK locked
+async def _delete_redis_job_group(cache_connection, group_id):
     print(f"deleting job group {group_id}")
 
     await cache_connection.delete(f'NJOBS_{group_id}')
-    await cache_connection.delete(f'DONE_{group_id}')
+
+    # allow programmatic access (caching)
+    # await cache_connection.delete(f'DONE_{group_id}')
 
 
-async def update_redis_job_group(cache_connection, group_id, job_id):
+# JOB_GROUPS_LOCK locked
+async def _update_redis_job_group(cache_connection, group_id, job_id):
     print(f"job {job_id} of group {group_id} finished")
 
     group_njobs = await cache_connection.get(f'NJOBS_{group_id}')
@@ -147,7 +198,7 @@ async def update_redis_job_group(cache_connection, group_id, job_id):
 
         print(f"all jobs of group {group_id} finished with results {group_results}")
 
-        await delete_redis_job_group(cache_connection, group_id)
+        await _delete_redis_job_group(cache_connection, group_id)
         await delete_email_list(cache_connection, group_id)
 
         return group_results, emails
@@ -160,11 +211,11 @@ async def update_redis_job_groups(cache_connection, job_id):
     completed_groups = {}
     emails = set()
 
-    with await JOB_GROUPS_LOCK:
+    async with locked(cache_connection, JOB_GROUPS_LOCK):
         for group_id in await cache_connection.smembers(f'GROUPS_{job_id}'):
             group_id = group_id.decode('utf-8')
 
-            group_results, group_emails = await update_redis_job_group(cache_connection, group_id, job_id)
+            group_results, group_emails = await _update_redis_job_group(cache_connection, group_id, job_id)
             emails.update(group_emails)
 
             if group_results is not None:
@@ -227,18 +278,20 @@ async def server_finished_alignment(mongo_db, mongo_gridfs, cache_connection, qu
 
     emails = set()
 
-    with await DATA_CACHE_LOCK:
+    async with locked(cache_connection, DATA_CACHE_LOCK):
         await cache_job_result(cache_connection, job_id, result_id)
         emails.update(await get_and_delete_email_list(cache_connection, job_id))
 
     completed_groups, group_emails = await update_redis_job_groups(cache_connection, job_id)
     emails.update(group_emails)
+    emails -= {''}
 
     async def get_results_and_send_email():
         results = await get_alignment(mongo_db, mongo_gridfs, result_id)
         await send_email_alignment(results, emails, mongo_gridfs)
 
-    get_event_loop().create_task(get_results_and_send_email())
+    if emails:
+        get_event_loop().create_task(get_results_and_send_email())
 
     for group_id, group_data in completed_groups.items():
         ids = group_data.get('results_object_ids', [])
@@ -251,12 +304,15 @@ async def server_finished_comparison(mongo_db, mongo_gridfs, cache_connection, j
 
     emails = set()
 
-    with await DATA_CACHE_LOCK:
+    async with locked(cache_connection, DATA_CACHE_LOCK):
         await cache_job_result(cache_connection, job_id, result_id)
         emails.update(await get_and_delete_email_list(cache_connection, job_id))
+
+    emails -= {''}
 
     async def get_results_and_send_emails():
         comparison_results = await get_comparison(mongo_db, mongo_gridfs, result_id)
         await send_email_comparison(comparison_results, emails, mongo_gridfs)
 
-    get_event_loop().create_task(get_results_and_send_emails())
+    if emails:
+        get_event_loop().create_task(get_results_and_send_emails())
