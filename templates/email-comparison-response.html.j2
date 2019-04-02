@@ -1,0 +1,260 @@
+<?doctype html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <style type="text/css">
+      body {
+        font-family: sans-serif;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin-left: 2em;
+      }
+
+      th, td {
+        border: 1px solid #d0d0d0;
+        padding: 0.8em;
+      }
+
+      td.htheader {
+        background-color: #eeeeee;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <p>
+    {% if results['ok'] %}
+      The alignments you requested have finished successfully.
+    {% else %}
+      The alignments you requested have failed.
+    {% endif %}
+    </p>
+
+    {% if results['exception'] %}
+    <p>
+      The following exception was caught during execution: {{ results['exception'] }}
+    </p>
+    {% endif %}
+
+    <h2>
+      Requested alignment information
+    </h2>
+    <table>
+      {% if aligners is defined %}
+        {% for aligner in aligners %}
+          <tr>
+            <td class=htheader>
+              Aligner
+            </td>
+            <td>
+              {% if 'aligner_params' in aligner and aligner['aligner_params'] %}
+                {{ aligner['aligner'] }}
+                with
+                {% for param, value in aligner['aligner_params'] %}
+                  {{ joiner(', ') }}
+                  {{ param ~ '=' ~ value }}
+                {% endfor %}
+              {% else %}
+                {{ aligner['aligner'] }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+      <tr>
+        <td class=htheader>
+          Database
+        </td>
+        <td>
+          {{ db }}
+        </td>
+      </tr>
+      <tr>
+        <td class=htheader>
+          Net 1
+        </td>
+        <td>
+          {{ net1 }} ({{ n_vert1 }} nodes, {{ n_edges1 }} edges)
+        </td>
+      </tr>
+      <tr>
+        <td class=htheader>
+          Net 2
+        </td>
+        <td>
+          {{ net2 }} ({{ n_vert2 }} nodes, {{ n_edges2 }} edges)
+        </td>
+      </tr>
+    </table>
+
+    {% if consensus_scores is defined %}
+      {% if 'ec_score' in consensus_scores['ec_data'] %}
+      <h2>
+        Topological information (consensus alignment)
+      </h2>
+      <table>
+        <tr>
+          <td class=htheader>
+            EC score
+          </td>
+          <td>
+            {{ consensus_scores['ec_data']['ec_score'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Preserved edges
+          </td>
+          <td>
+            {{ consensus_scores['ec_data']['num_preserved_edges'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Non-preserved edges
+          </td>
+          <td>
+            {{ consensus_scores['ec_data']['num_non_preserved_edges'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Non-reflected edges
+          </td>
+          <td>
+            {{ consensus_scores['ec_data']['num_non_reflected_edges'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Unaligned nodes
+          </td>
+          <td>
+            {{ consensus_scores['ec_data']['num_unaligned_nodes_net1'] }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Unaligned edges
+          </td>
+          <td>
+            {{ consensus_scores['ec_data']['num_unaligned_edges_net1'] }}
+          </td>
+        </tr>
+      </table>
+      {% endif %}
+
+      {% if 'fc_data' in consensus_scores %}
+      <h2>
+        Functional information (consensus alignment)
+      </h2>
+      <table>
+        {% if 'fc_score_jaccard' in consensus_scores['fc_data'] %}
+        <tr>
+          <td class=htheader>
+            FC score (Jaccard)
+          </td>
+          <td>
+            {{ consensus_scores['fc_data']['fc_score_jaccard'] }}
+          </td>
+        </tr>
+        {% endif %}
+        {% if 'fc_score_hrss_bma' in consensus_scores['fc_data'] %}
+        <tr>
+          <td class=htheader>
+            FC score (HRSS/BMA)
+          </td>
+          <td>
+            {{ consensus_scores['fc_data']['fc_score_hrss_bma'] }}
+          </td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td class=htheader>
+            Unannotated proteins in net 1
+          </td>
+          <td>
+            {{ consensus_scores['fc_data']['unannotated_prots_net1']|length }}
+          </td>
+        </tr>
+        <tr>
+          <td class=htheader>
+            Unannotated proteins in net 2
+          </td>
+          <td>
+            {{ consensus_scores['fc_data']['unannotated_prots_net2']|length }}
+          </td>
+        </tr>
+      </table>
+      {% endif %}
+
+      <figure>
+        <img src="cid:ann_freq_hists.png" alt="Annotation frequencies for {{ net1 }}" />
+        <figcaption>Annotation count frequencies</figcaption>
+      </figure>
+    {% endif %}
+
+    {% if files is defined %}
+    <h2>Supplementary files</h2>
+      <table>
+        <tr>
+          <th>Content</th>
+          <th>Link</th>
+        </tr>
+        </tr>
+        {% if 'joined' in results and results['joined'] is none %}
+          <tr>
+            <td class=htheader>
+              Joined alignments
+            </td>
+            <td>
+              <a href="{{base_url}}/v2/file/{{ files['joined_tsv'] }}">(tsv)</a>
+            </td>
+          </tr>
+        {% endif %}
+        {% if 'consensus' in results and results['consensus'] is none %}
+          <tr>
+            <td class=htheader>
+              Consensus alignment
+            </td>
+            <td>
+              <a href="{{base_url}}/v2/file/{{ files['consensus_tsv'] }}">(tsv)</a>
+            </td>
+          </tr>
+        {% endif %}
+
+        {% if consensus_scores is defined %}
+          {% for score_type, key, text in [
+                ('ec_data', 'non_preserved_edges',    'Non-preserved edges'),
+                ('ec_data', 'non_reflected_edges',    'Non-reflected edges'),
+                ('ec_data', 'invalid_images',         'Invalid image values'),
+                ('ec_data', 'unaligned_nodes',        'Unaligned nodes'),
+                ('ec_data', 'unaligned_edges',        'Unaligned edges'),
+                ('fc_data', 'fc_values_jaccard',      'Pairwise Jaccard similarities'),
+                ('fc_data', 'fc_values_hrss_bma',     'Pairwise HRSS (best match avg) similarities'),
+                ('fc_data', 'unannotated_prots_net1', 'Unannotated proteins in net1'),
+                ('fc_data', 'unannotated_prots_net2', 'Unannotated proteins in net2')] %}
+
+            {% if scores is defined and score_type in consensus_scores and
+                  key in consensus_scores[score_type] and consensus_scores[score_type][key] is none %}
+              <tr>
+                <td class=htheader>
+                  {{ text }}
+                </td>
+                <td>
+                  <a href="{{base_url}}/v2/file/{{ files[score_type+'/'+key+'_tsv'] }}">(tsv)</a>
+                </td>
+              </tr>
+            {% endif %}
+
+          {% endfor %}
+        {% endif %}
+
+      </table>
+    {% endif %}
+  </body>
+</html>

@@ -185,7 +185,7 @@
             Unannotated proteins in net 1
           </td>
           <td>
-            {{ scores['fc_data']['unannotated_prots_net1']|length }}
+            {{ scores['fc_data']['ann_freqs_net1'].get('0', 0) }}
           </td>
         </tr>
         <tr>
@@ -193,7 +193,7 @@
             Unannotated proteins in net 2
           </td>
           <td>
-            {{ scores['fc_data']['unannotated_prots_net2']|length }}
+            {{ scores['fc_data']['ann_freqs_net2'].get('0', 0) }}
           </td>
         </tr>
       </table>
@@ -223,70 +223,34 @@
             </td>
           </tr>
         {% endif %}
-        {% if scores is defined and 'ec_data' in scores %}
-          {% if 'non_preserved_edges' in scores['ec_data'] and scores['ec_data']['non_preserved_edges'] is none %}
-            <tr>
-              <td class=htheader>
-                Non-preserved edges
-              </td>
-              <td>
-                <a href="{{base_url}}/v2/file/{{ files['non_preserved_edges_tsv'] }}">(tsv)</a>
-              </td>
-            </tr>
-          {% endif %}
-          {% if 'non_preserved_edges' in scores['ec_data'] and scores['ec_data']['non_preserved_edges'] is none %}
-            <tr>
-              <td class=htheader>
-                Non-preserved edges
-              </td>
-              <td>
-                <a href="{{base_url}}/v2/file/{{ files['non_reflected_edges_tsv'] }}">(tsv)</a>
-              </td>
-            </tr>
-          {% endif %}
+
+        {% if scores is defined %}
+          {% for score_type, key, text in [
+                ('ec_data', 'non_preserved_edges',    'Non-preserved edges'),
+                ('ec_data', 'non_reflected_edges',    'Non-reflected edges'),
+                ('ec_data', 'invalid_images',         'Invalid image values'),
+                ('ec_data', 'unaligned_nodes',        'Unaligned nodes'),
+                ('ec_data', 'unaligned_edges',        'Unaligned edges'),
+                ('fc_data', 'fc_values_jaccard',      'Pairwise Jaccard similarities'),
+                ('fc_data', 'fc_values_hrss_bma',     'Pairwise HRSS (best match avg) similarities'),
+                ('fc_data', 'unannotated_prots_net1', 'Unannotated proteins in net1'),
+                ('fc_data', 'unannotated_prots_net2', 'Unannotated proteins in net2')] %}
+
+            {% if scores is defined and score_type in scores and
+                  key in scores[score_type] and scores[score_type][key] is none %}
+              <tr>
+                <td class=htheader>
+                  {{ text }}
+                </td>
+                <td>
+                  <a href="{{base_url}}/v2/file/{{ files[score_type+'/'+key+'_tsv'] }}">(tsv)</a>
+                </td>
+              </tr>
+            {% endif %}
+
+          {% endfor %}
         {% endif %}
-        {% if scores is defined and 'fc_data' in scores %}
-          {% if 'fc_values_jaccard' in scores['fc_data'] and scores['fc_data']['fc_values_jaccard'] is none %}
-            <tr>
-              <td class=htheader>
-                Pairwise Jaccard similarities
-              </td>
-              <td>
-                <a href="{{base_url}}/v2/file/{{ files['fc_values_jaccard_tsv'] }}">(tsv)</a>
-              </td>
-            </tr>
-          {% endif %}
-          {% if 'fc_values_hrss_bma' in scores['fc_data'] and scores['fc_data']['fc_values_hrss_bma'] is none %}
-            <tr>
-              <td class=htheader>
-                Pairwise HRSS/BMA similarities
-              </td>
-              <td>
-                <a href="{{base_url}}/v2/file/{{ files['fc_values_hrss_bma_tsv'] }}">(tsv)</a>
-              </td>
-            </tr>
-          {% endif %}
-          {% if 'unannotated_prots_net1' in scores['fc_data'] and scores['fc_data']['unannotated_prots_net1'] is none %}
-            <tr>
-              <td class=htheader>
-                Unannotated proteins in net1
-              </td>
-              <td>
-                <a href="{{base_url}}/v2/file/{{ files['unannotated_prots_net1_tsv'] }}">(tsv)</a>
-              </td>
-            </tr>
-          {% endif %}
-          {% if 'unannotated_prots_net2' in scores['fc_data'] and scores['fc_data']['unannotated_prots_net2'] is none %}
-            <tr>
-              <td class=htheader>
-                Unannotated proteins in net2
-              </td>
-              <td>
-                <a href="{{base_url}}/v2/file/{{ files['unannotated_prots_net2_tsv'] }}">(tsv)</a>
-              </td>
-            </tr>
-          {% endif %}
-        {% endif %}
+
       </table>
     {% endif %}
   </body>
