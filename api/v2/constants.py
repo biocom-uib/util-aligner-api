@@ -1,4 +1,6 @@
 String = 'stringdb'
+IsoBase = 'isobase'
+StringDBVirus = 'stringdbvirus'
 
 PROCESS_TASK = 'process_alignment'
 COMPARE_TASK = 'compare_alignments'
