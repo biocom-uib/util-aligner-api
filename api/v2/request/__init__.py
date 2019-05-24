@@ -26,5 +26,6 @@ def adapt_data(raw_data):
         'aligners': raw_data['aligner'],
         'aligner_params': raw_data.get('aligner_params', {}),
         'mail': raw_data['mail'],
+        'use_cache': raw_data.get('use_cache', True)
     }
     return data
