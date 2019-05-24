@@ -1,6 +1,7 @@
-from aiohttp.web import Response
+from aiohttp.web import Response, StreamResponse, HTTPBadRequest
 from bson.json_util import dumps as bson_dumps, RELAXED_JSON_OPTIONS
 from bson.objectid import ObjectId
+from yarl import URL
 import json
 import re
 
@@ -55,6 +56,103 @@ async def get_aligners(request):
                     content_type="application/json",
                     headers=headers,
                     status=200)
+
+
+async def forward_streaming_request(request, new_request):
+    async with new_request as resp:
+        headers = settings.get('HEADERS')
+
+        if resp.status < 400:
+            resp2 = StreamResponse(headers=headers, status=200)
+            resp2.content_type = resp.content_type
+            resp2.content_length = resp.content_length
+
+            await resp2.prepare(request)
+
+            async for chunk, _ in resp.content.iter_chunks():
+                await resp2.write(chunk)
+
+            await resp2.write_eof()
+            return resp2
+
+        else:
+            return Response(
+                    body=await resp.read(),
+                    content_type=resp.content_type,
+                    headers=headers,
+                    status=resp.status if resp.status >= 400 else 200)
+
+
+async def get_species(request):
+    url = URL(settings.get('SOURCES_API_HOST'))
+    db = request.match_info['db']
+
+    if db == 'stringdb':
+        url = url / 'db' / 'stringdb' / 'items' / 'species' / 'select'
+    else:
+        raise HTTPBadRequest(text='DB not supported for request: ' + db)
+
+    req_headers = {'Accept': request.headers.get('Accept', '*/*')}
+
+    sess = request.sources_api_session
+
+    return await forward_streaming_request(
+            request,
+            sess.post(url=url, json=request.post_json, headers=req_headers))
+
+
+async def get_proteins(request):
+    url = URL(settings.get('SOURCES_API_HOST'))
+    db = request.match_info['db']
+
+    if db == 'stringdb':
+        url = url / 'db' / 'stringdb' / 'items' / 'proteins' / 'select'
+    else:
+        raise HTTPBadRequest(text='DB not supported for request: ' + db)
+
+    req_headers = {'Accept': request.headers.get('Accept', '*/*')}
+
+    sess = request.sources_api_session
+
+    return await forward_streaming_request(
+            request,
+            sess.post(url=url, json=request.post_json, headers=req_headers))
+
+
+async def get_network(request):
+    url = URL(settings.get('SOURCES_API_HOST'))
+    db = request.match_info['db']
+
+    if db == 'stringdb':
+        url = url / 'db' / 'stringdb' / 'network' / 'edges' / 'select'
+    else:
+        raise HTTPBadRequest(text='DB not supported for request: ' + db)
+
+    req_headers = {'Accept': request.headers.get('Accept', '*/*')}
+
+    sess = request.sources_api_session
+
+    return await forward_streaming_request(
+            request,
+            sess.post(url=url, json=request.post_json, headers=req_headers))
+
+
+async def get_weighted_network(request):
+    url = URL(settings.get('SOURCES_API_HOST'))
+    db = request.match_info['db']
+
+    if db == 'stringdb':
+        url = url / 'db' / 'stringdb' / 'network' / 'edges' / 'weighted'
+    else:
+        raise HTTPBadRequest(text='DB not supported for request: ' + db)
+
+    req_headers = {'Accept': request.headers.get('Accept', '*/*')}
+
+    sess = request.sources_api_session
+
+    return await forward_streaming_request(
+            request,
+            sess.get(url=url, params=request.rel_url.query, headers=req_headers))
 
 
 async def get_mongo_alignment(request):

@@ -27,7 +27,10 @@ DEBUG = env.bool('DEBUG', default=False)
 
 # HTTP
 # -----------------------------------------------------------------------------
-CLIENT_MAX_SIZE = env('CLIENT_MAX_SIZE', 512 * 1024**2) # 512 MB
+SOURCES_API_HOST = env('SOURCES_API_HOST', 'http://sources-api')
+SOURCES_API_LIMIT = env.int('SOURCES_API_LIMIT', 100)
+
+CLIENT_MAX_SIZE = env.int('CLIENT_MAX_SIZE', 512 * 1024**2) # 512 MB
 
 # CELERY
 # -----------------------------------------------------------------------------

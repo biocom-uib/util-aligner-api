@@ -1,3 +1,4 @@
+import aiohttp
 import aiomysql
 import aioredis
 import motor.motor_asyncio
@@ -5,6 +6,7 @@ import motor.motor_asyncio
 from celery import Celery
 
 from config import config
+
 
 
 async def _create_db_pool(max_connections=None):
@@ -62,3 +64,19 @@ async def create_mongo(app):
     client = motor.motor_asyncio.AsyncIOMotorClient(config['MONGODB_URL'])
     app['mongo_db'] = client.util_aligner
     app['mongo_gridfs'] = motor.motor_asyncio.AsyncIOMotorGridFSBucket(client.util_aligner)
+
+
+async def _create_sources_api_session(max_connections=None):
+    limit = max_connections or config['SOURCES_API_LIMIT']
+
+    return aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(),
+            connector=aiohttp.TCPConnector(limit=limit))
+
+
+async def create_sources_api_session(app):
+    app['sources_api_session'] = await _create_sources_api_session()
+
+
+async def dispose_sources_api_session(app):
+    await app['sources_api_session'].close()
