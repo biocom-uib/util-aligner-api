@@ -1,4 +1,5 @@
 from aiohttp.web import Response
+from bson.json_util import dumps as bson_dumps, RELAXED_JSON_OPTIONS
 from bson.objectid import ObjectId
 import json
 import re
@@ -51,6 +52,28 @@ async def get_aligners(request):
 
     headers = settings.get('HEADERS')
     return Response(body=json.dumps(data),
+                    content_type="application/json",
+                    headers=headers,
+                    status=200)
+
+
+async def get_mongo_alignment(request):
+    obj_id = request.match_info['result_id']
+    res = await request.app['mongo_db'].alignments.find_one({'_id': ObjectId(obj_id)})
+
+    headers = settings.get('HEADERS')
+    return Response(body=bson_dumps(res, json_options=RELAXED_JSON_OPTIONS),
+                    content_type="application/json",
+                    headers=headers,
+                    status=200)
+
+
+async def get_mongo_comparison(request):
+    obj_id = request.match_info['result_id']
+    res = await request.app['mongo_db'].comparisons.find_one({'_id': ObjectId(obj_id)})
+
+    headers = settings.get('HEADERS')
+    return Response(body=bson_dumps(res, json_options=RELAXED_JSON_OPTIONS),
                     content_type="application/json",
                     headers=headers,
                     status=200)
