@@ -4,6 +4,12 @@ from aiohttp import web
 
 
 @web.middleware
+async def sources_api_middleware(request, handler):
+    request.sources_api_session = request.app['sources_api_session']
+    return await handler(request)
+
+
+@web.middleware
 async def database_middleware(request, handler):
     master_pool = request.app['master_pool']
     async with master_pool.acquire() as master_connection:

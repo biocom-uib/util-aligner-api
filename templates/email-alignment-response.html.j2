@@ -75,7 +75,7 @@
           Net 1
         </td>
         <td>
-          {{ net1 }} ({{ n_vert1 }} nodes, {{ n_edges1 }} edges)
+          {{ net1 }} ({{ net1_details.n_vert }} nodes, {{ net1_details.n_edges }} edges)
         </td>
       </tr>
       <tr>
@@ -83,7 +83,7 @@
           Net 2
         </td>
         <td>
-          {{ net2 }} ({{ n_vert2 }} nodes, {{ n_edges2 }} edges)
+          {{ net2 }} ({{ net2_details.n_vert }} nodes, {{ net2_details.n_edges }} edges)
         </td>
       </tr>
       {% if 'run_time' in results %}
@@ -180,6 +180,7 @@
           </td>
         </tr>
         {% endif %}
+        {% if 'ann_freqs_net1' in scores['fc_data'] %}
         <tr>
           <td class=htheader>
             Unannotated proteins in net 1
@@ -188,6 +189,8 @@
             {{ scores['fc_data']['ann_freqs_net1'].get('0', 0) }}
           </td>
         </tr>
+        {% endif %}
+        {% if 'ann_freqs_net2' in scores['fc_data'] %}
         <tr>
           <td class=htheader>
             Unannotated proteins in net 2
@@ -196,6 +199,7 @@
             {{ scores['fc_data']['ann_freqs_net2'].get('0', 0) }}
           </td>
         </tr>
+        {% endif %}
       </table>
       {% endif %}
 
@@ -212,8 +216,16 @@
           <th>Content</th>
           <th>Link</th>
         </tr>
+        <tr>
+          <td class=htheader>
+            Full data
+          </td>
+          <td>
+            <a href="{{base_url}}/v2/alignment/{{result_id}}">(json)</a>
+          </td>
         </tr>
-        {% if 'alignment' in results and results['alignment'] is none %}
+        </tr>
+        {% if 'alignment' in results %}
           <tr>
             <td class=htheader>
               Alignment
@@ -236,8 +248,7 @@
                 ('fc_data', 'unannotated_prots_net1', 'Unannotated proteins in net1'),
                 ('fc_data', 'unannotated_prots_net2', 'Unannotated proteins in net2')] %}
 
-            {% if scores is defined and score_type in scores and
-                  key in scores[score_type] and scores[score_type][key] is none %}
+            {% if scores is defined and score_type in scores and key in scores[score_type] %}
               <tr>
                 <td class=htheader>
                   {{ text }}

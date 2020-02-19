@@ -10,6 +10,11 @@ selectors = [
     ['GET', f'{BASE_PATH}/v2/networks/{{database}}',    v2.selectors.get_networks],
     ['GET', f'{BASE_PATH}/v2/aligner',                  v2.selectors.get_aligners],
 
+    ['POST', f'{BASE_PATH}/v2/species/{{db}}/select',    v2.selectors.get_species],
+    ['POST', f'{BASE_PATH}/v2/proteins/{{db}}/select',   v2.selectors.get_proteins],
+    ['POST', f'{BASE_PATH}/v2/networks/{{db}}/select',   v2.selectors.get_network],
+    ['GET',  f'{BASE_PATH}/v2/networks/{{db}}/weighted', v2.selectors.get_weighted_network],
+
     ['GET', f'{BASE_PATH}/v2/file/{{filename}}',        v2.selectors.get_mongo_file],
     ['GET', f'{BASE_PATH}/v2/alignment/{{result_id}}',  v2.selectors.get_mongo_alignment],
     ['GET', f'{BASE_PATH}/v2/comparison/{{result_id}}', v2.selectors.get_mongo_comparison],

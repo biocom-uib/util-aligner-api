@@ -3,9 +3,10 @@ version: '3'
 services:
   api:
     image: bielr/util-aligner-api
+    restart: unless-stopped
     build:
-      context: .
-      dockerfile: ./docker/Dockerfile
+      context: ./docker/
+      dockerfile: ./Dockerfile_base
     command: sh docker/gunicorn.sh --timeout 720
     ports:
       - 10080:8080

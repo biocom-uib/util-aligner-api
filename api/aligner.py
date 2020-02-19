@@ -45,10 +45,16 @@ def create_email_key(job_id):
 
 
 async def get_alignment(mongo_db, mongo_gridfs, result_id):
-    return await mongo_db.alignments.find_one({'_id': ObjectId(result_id)})
+    response = await mongo_db.alignments.find_one({'_id': ObjectId(result_id)})
+    oid = response.pop('_id')
+    response['result_id'] = str(oid)
+    return response
 
 async def get_comparison(mongo_db, mongo_gridfs, result_id):
-    return await mongo_db.comparisons.find_one({'_id': ObjectId(result_id)})
+    response = await mongo_db.comparisons.find_one({'_id': ObjectId(result_id)})
+    oid = response.pop('_id')
+    response['result_id'] = str(oid)
+    return response
 
 async def get_job_result_id(cache_connection, job_id):
     result_id = await cache_connection.get(create_result_key(job_id))
@@ -77,14 +83,19 @@ async def get_and_delete_email_list(cache_connection, job_id):
 
 
 async def create_redis_job_if_needed(cache_connection, data, emails=[]):
+    use_cache = data.pop('use_cache', True)
     data_key = create_data_key(data)
+    data['use_cache'] = use_cache
     new_job_id = create_job_id()
 
     # reserve cache_key for job_id if not already present
     async with locked(cache_connection, DATA_CACHE_LOCK):
-        await cache_connection.set(data_key, new_job_id, exist=cache_connection.SET_IF_NOT_EXIST)
-        job_id = await cache_connection.get(data_key)
-        job_id = job_id.decode('utf-8')
+        if use_cache:
+            await cache_connection.set(data_key, new_job_id, exist=cache_connection.SET_IF_NOT_EXIST)
+            job_id = await cache_connection.get(data_key)
+            job_id = job_id.decode('utf-8')
+        else:
+            job_id = new_job_id
 
         is_new = job_id == new_job_id
 

@@ -33,7 +33,7 @@ async def prepare_attachment_tsv(mongo_gridfs, response, obj, key, header=None):
     value = obj.get(key)
 
     ## now sent as a link
-    if value is None:
+    if value is None or isinstance(value, dict) and 'file' in value:
         return {}
 
     with NamedTemporaryFile(delete=False, mode='w', suffix='.tmp.tsv') as tmpfile:

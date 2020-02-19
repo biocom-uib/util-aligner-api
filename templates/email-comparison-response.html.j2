@@ -205,6 +205,14 @@
           <th>Content</th>
           <th>Link</th>
         </tr>
+        <tr>
+          <td class=htheader>
+            Full data
+          </td>
+          <td>
+            <a href="{{base_url}}/v2/comparison/{{result_id}}">(json)</a>
+          </td>
+        </tr>
         </tr>
         {% if 'joined' in results and results['joined'] is none %}
           <tr>
@@ -216,7 +224,7 @@
             </td>
           </tr>
         {% endif %}
-        {% if 'consensus' in results and results['consensus'] is none %}
+        {% if 'consensus' in results %}
           <tr>
             <td class=htheader>
               Consensus alignment
@@ -239,8 +247,7 @@
                 ('fc_data', 'unannotated_prots_net1', 'Unannotated proteins in net1'),
                 ('fc_data', 'unannotated_prots_net2', 'Unannotated proteins in net2')] %}
 
-            {% if scores is defined and score_type in consensus_scores and
-                  key in consensus_scores[score_type] and consensus_scores[score_type][key] is none %}
+            {% if scores is defined and score_type in consensus_scores and key in consensus_scores[score_type] %}
               <tr>
                 <td class=htheader>
                   {{ text }}
