@@ -31,6 +31,8 @@
       The alignment you requested has finished successfully with exit code {{ results['exit_code'] }}.
     {% elif scores is defined %}
       The alignment you requested has finished with errors (exit code {{ results['exit_code'] }}).
+    {% elif 'timed_out' in results and results['timed_out'] %}
+      The alignment you requested has timed out.
     {% else %}
       The alignment you requested has failed.
     {% endif %}
