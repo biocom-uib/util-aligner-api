@@ -26,9 +26,6 @@ async def get_databases(request):
 async def get_aligners(request):
     enabled_aligners = sorted(['HubAlign', 'AligNet', 'PINALOG', 'SPINAL', 'L-GRAAL'])
 
-    # TODO: fix SPINAL
-    enabled_aligners = sorted(['HubAlign', 'AligNet', 'PINALOG', 'L-GRAAL'])
-
     data = {
         'data': [{'text': a, 'value': a.lower()} for a in enabled_aligners]
     }
