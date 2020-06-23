@@ -1,7 +1,9 @@
 from aiohttp.web import Response, StreamResponse, HTTPBadRequest
 from bson.json_util import dumps as bson_dumps, RELAXED_JSON_OPTIONS
 from bson.objectid import ObjectId
+from io import StringIO
 from yarl import URL
+import csv
 import json
 import re
 
@@ -21,21 +23,15 @@ async def get_databases(request):
                     status=200)
 
 
-async def get_networks(request):
-    mysql_conn = request.db
+async def get_aligners(request):
+    enabled_aligners = sorted(['HubAlign', 'AligNet', 'PINALOG', 'SPINAL', 'L-GRAAL'])
 
-    db_name = request.match_info['database']
+    # TODO: fix SPINAL
+    enabled_aligners = sorted(['HubAlign', 'AligNet', 'PINALOG', 'L-GRAAL'])
 
-    if db_name.lower() == 'stringdb':
-        async with mysql_conn.cursor() as mysql_cursor:
-            await mysql_cursor.execute('select species_id, official_name from stringdb_species order by official_name;')
-
-            species = [{'text':f'{official_name} (NCBI: {species_id})', 'value': species_id}
-                        for species_id, official_name in await mysql_cursor.fetchall()]
-
-        data = {'data': species}
-    else:
-        data = {'data': []}
+    data = {
+        'data': [{'text': a, 'value': a.lower()} for a in enabled_aligners]
+    }
 
     headers = settings.get('HEADERS')
     return Response(body=json.dumps(data),
@@ -44,12 +40,32 @@ async def get_networks(request):
                     status=200)
 
 
-async def get_aligners(request):
-    data = {
-        'data':
-            [{'text': a, 'value': a.lower()}
-                for a in sorted(['HubAlign', 'AligNet', 'PINALOG', 'SPINAL', 'L-GRAAL'])]
-    }
+async def get_networks(request):
+    url = URL(settings.get('SOURCES_API_HOST'))
+    db_name = request.match_info['db']
+
+    if db_name.lower() == 'stringdb':
+        url = url / 'db' / 'stringdb' / 'items' / 'species' / 'select'
+
+        sess = request.sources_api_session
+        req_headers = {'Accept': 'text/tab-separated-values'}
+
+        sources_req = sess.post(url=url, json={'columns': ['species_id', 'official_name']}, headers=req_headers)
+
+        async with sources_req as sources_resp:
+            sources_resp.raise_for_status()
+            species_rows = csv.reader(StringIO(await sources_resp.text()), delimiter='\t')
+            next(species_rows) # skip header
+
+            species = [
+                {'text':f'{official_name} (NCBI: {species_id})', 'value': species_id}
+                for species_id, official_name in species_rows
+            ]
+            species.sort(key = lambda item: item['text'])
+
+        data = {'data': species}
+    else:
+        data = {'data': []}
 
     headers = settings.get('HEADERS')
     return Response(body=json.dumps(data),

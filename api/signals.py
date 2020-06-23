@@ -26,22 +26,22 @@ async def dispose_db_pool(app):
     await app['master_pool'].wait_closed()
 
 
-def create_sentry(app):
-    import os
-    from raven import Client, fetch_git_sha
-    from raven_aiohttp import AioHttpTransport
+# def create_sentry(app):
+#     import os
+#     from raven import Client, fetch_git_sha
+#     from raven_aiohttp import AioHttpTransport
 
-    base_dir = os.path.dirname(os.path.dirname(__file__))
+#     base_dir = os.path.dirname(os.path.dirname(__file__))
 
-    app['sentry'] = Client(
-        config['SENTRY_DSN'],
-        transport=AioHttpTransport,
-        environment=config['env'],
-        release=fetch_git_sha(base_dir))
+#     app['sentry'] = Client(
+#         config['SENTRY_DSN'],
+#         transport=AioHttpTransport,
+#         environment=config['env'],
+#         release=fetch_git_sha(base_dir))
 
 
-async def dispose_sentry(app):
-    app['sentry'].remote.get_transport().close()
+# async def dispose_sentry(app):
+#     app['sentry'].remote.get_transport().close()
 
 
 async def _create_cache_pool():

@@ -53,5 +53,11 @@ BASE_PATH = env('BASE_PATH')
 EMAIL_FROM = env('EMAIL_FROM')
 EMAIL_PASSWORD = env('EMAIL_PASSWORD')
 
+# CACHING
+# -----------------------------------------------------------------------------
+REDIS_DSN = env('REDIS_DSN', default='redis 6379 0')
+REDIS_URL = env('REDIS_URL', default='redis://redis')
+MAX_SIZE_REDIS = env('MAX_SIZE_REDIS', default=10)
+
 # MONGO
 MONGODB_URL = env('MONGODB_URL', default='mongodb://mongo/util_aligner')

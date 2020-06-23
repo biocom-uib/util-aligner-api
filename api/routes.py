@@ -7,7 +7,7 @@ robots = ['GET', '/util-aligner/robots.txt', v2.robots.robots]
 
 selectors = [
     ['GET', f'{BASE_PATH}/v2/database',                 v2.selectors.get_databases],
-    ['GET', f'{BASE_PATH}/v2/networks/{{database}}',    v2.selectors.get_networks],
+    ['GET', f'{BASE_PATH}/v2/networks/{{db}}',          v2.selectors.get_networks],
     ['GET', f'{BASE_PATH}/v2/aligner',                  v2.selectors.get_aligners],
 
     ['POST', f'{BASE_PATH}/v2/species/{{db}}/select',    v2.selectors.get_species],
