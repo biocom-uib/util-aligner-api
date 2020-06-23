@@ -6,9 +6,7 @@ from aiohttp_cors import ResourceOptions, setup as setup_cors
 
 from api.middleware import json_middleware, sources_api_middleware
 from api.routes import routes
-from api.signals import (# create_sentry, dispose_sentry,
-                         # create_db_pool, dispose_db_pool,
-                         create_sources_api_session, dispose_sources_api_session,
+from api.signals import (create_sources_api_session, dispose_sources_api_session,
                          create_celery_app,
                          create_cache_pool,
                          create_mongo)
@@ -24,28 +22,17 @@ def setup_routes(app):
 def setup_middlewares(app):
     app.middlewares.append(sources_api_middleware)
     app.middlewares.append(json_middleware)
-    # if os.environ['APP_ENV'] == 'local':  # pragma: nocover
-    #     app.middlewares.append(database_middleware)
 
 
 def on_startup_signal(app):
     app.on_startup.append(create_celery_app)
-    # app.on_startup.append(create_db_pool)
     app.on_startup.append(create_cache_pool)
     app.on_startup.append(create_mongo)
     app.on_startup.append(create_sources_api_session)
 
-    # if os.environ['APP_ENV'] == 'production':  # pragma: nocover
-    #     app.on_startup.append(create_sentry)
-
 
 def on_cleanup_signal(app):
     app.on_cleanup.append(dispose_sources_api_session)
-
-    # if os.environ['APP_ENV'] == 'local':  # pragma: nocover
-    #     app.on_cleanup.append(dispose_db_pool)
-    # if os.environ['APP_ENV'] == 'production':  # pragma: nocover
-    #     app.on_cleanup.append(dispose_sentry)
 
 
 def init_cors(app):

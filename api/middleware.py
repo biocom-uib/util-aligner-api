@@ -9,28 +9,6 @@ async def sources_api_middleware(request, handler):
     return await handler(request)
 
 
-# @web.middleware
-# async def database_middleware(request, handler):
-#     master_pool = request.app['master_pool']
-#     async with master_pool.acquire() as master_connection:
-#         request.db = master_connection
-#         return await handler(request)
-
-
-# async def send_errors_sentry(sentry_client, request):
-#     if sentry_client:  # pragma: nocover
-#         sentry_client.http_context({
-#             'url': request.path,
-#             'query_string': request.query_string,
-#             'method': request.method,
-#             'headers': dict(request.headers),
-#             'cookies': dict(request.cookies),
-#             'data': await request.read()
-#         })
-#         sentry_client.captureException()
-#         sentry_client.context.clear()
-
-
 @web.middleware
 async def error_middleware(request, handler):
     try:
