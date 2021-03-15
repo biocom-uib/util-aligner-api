@@ -12,6 +12,7 @@ from uuid import uuid4
 from api.v2.constants import PROCESS_TASK, COMPARE_TASK, QUEUE_DISPATCHER
 
 LOCK_MANAGER = None
+LOCK_TIMEOUT = 3600
 DATA_CACHE_LOCK = "DATA_CACHE_LOCK"
 JOB_GROUPS_LOCK = "JOB_GROUPS_LOCK"
 
@@ -21,9 +22,9 @@ async def locked(cache_connection, lock_key):
     global LOCK_MANAGER
 
     if LOCK_MANAGER is None:
-        LOCK_MANAGER = Aioredlock(redis_connections=[cache_connection], lock_timeout=3600, retry_count=300)
+        LOCK_MANAGER = Aioredlock(redis_connections=[cache_connection], retry_count=300)
 
-    async with await LOCK_MANAGER.lock(lock_key) as lock:
+    async with await LOCK_MANAGER.lock(lock_key, lock_timeout=LOCK_TIMEOUT) as lock:
         assert lock.valid
         yield
 

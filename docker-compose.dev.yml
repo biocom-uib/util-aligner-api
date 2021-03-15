@@ -4,4 +4,4 @@ services:
   api:
     # build:
     #   args:
-    #     APP_ENV: 'prod'
+    #     APP_ENV: 'local'

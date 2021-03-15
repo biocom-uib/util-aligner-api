@@ -25,6 +25,13 @@ print('The .env file has been loaded. See base.py for more information')
 # -----------------------------------------------------------------------------
 DEBUG = env.bool('DEBUG', default=False)
 
+# APPLICATION-SPECIFIC
+SERVER_URL = env('SERVER_URL')
+BASE_PATH = env('BASE_PATH')
+
+EMAIL_FROM = env('EMAIL_FROM')
+EMAIL_PASSWORD = env('EMAIL_PASSWORD')
+
 # HTTP
 # -----------------------------------------------------------------------------
 SOURCES_API_HOST = env('SOURCES_API_HOST', 'http://sources-api')
@@ -34,24 +41,22 @@ CLIENT_MAX_SIZE = env.int('CLIENT_MAX_SIZE', 512 * 1024**2) # 512 MB
 
 # CELERY
 # -----------------------------------------------------------------------------
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@rabbitmq:5672//')
-CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE', default='server_default')
-ALIGNMENT_QUEUE = env('ALIGNMENT_QUEUE', default='server_aligner')
-MULTIPLE_QUEUE = env('MULTIPLE_QUEUE', default='server_comparer')
-CELERY_TASK_QUEUES = [
+class CelerySettings(object): pass
+
+CELERY = CelerySettings()
+
+CELERY.broker_url = env('CELERY_BROKER_URL', default='amqp://guest:guest@rabbitmq:5672//')
+CELERY.task_default_queue = env('CELERY_TASK_DEFAULT_QUEUE', default='server_default')
+alignment_queue = env('ALIGNMENT_QUEUE', default='server_aligner')
+multiple_queue = env('MULTIPLE_QUEUE', default='server_comparer')
+CELERY.task_queues = [
     Queue('server_default', routing_key='server_default',
           queue_arguments={'x-max-priority': 10}),
-    Queue(ALIGNMENT_QUEUE, routing_key=ALIGNMENT_QUEUE,
+    Queue(alignment_queue, routing_key=alignment_queue,
           queue_arguments={'x-max-priority': 10}),
-    Queue(MULTIPLE_QUEUE, routing_key=MULTIPLE_QUEUE,
+    Queue(multiple_queue, routing_key=multiple_queue,
           queue_arguments={'x-max-priority': 10})
 ]
-
-SERVER_URL = env('SERVER_URL')
-BASE_PATH = env('BASE_PATH')
-
-EMAIL_FROM = env('EMAIL_FROM')
-EMAIL_PASSWORD = env('EMAIL_PASSWORD')
 
 # CACHING
 # -----------------------------------------------------------------------------

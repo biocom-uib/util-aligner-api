@@ -21,7 +21,7 @@ async def create_cache_pool(app):
 
 async def create_celery_app(app):
     celery_app = Celery()
-    celery_app.config_from_object(config, namespace='CELERY')
+    celery_app.config_from_object(config['CELERY'])
     app['celery'] = celery_app
 
 

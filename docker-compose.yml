@@ -2,17 +2,32 @@ version: '3'
 
 services:
   api:
-    image: bielr/util-aligner-api
+    image: bielr/util-aligner-api:0.2
     restart: unless-stopped
-    build:
-      context: ./docker/
-      dockerfile: ./Dockerfile_base
+    # build:
+    #   context: ./docker/
+    #   dockerfile: ./Dockerfile
     command: sh docker/gunicorn.sh --timeout 720
     ports:
       - 10080:8080
     volumes:
       - .:/opt/:rw
       - data:/opt/data
+    depends_on:
+      - redis
+    networks:
+    - api-net
+
+  redis:
+    image: redis:4-alpine
+    volumes:
+    - redis-data:/data
+    networks:
+    - api-net
 
 volumes:
   data: {}
+  redis-data: {}
+
+networks:
+  api-net:
