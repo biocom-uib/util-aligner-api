@@ -129,7 +129,11 @@ async def cache_job_result(cache_connection, job_id, result_id):
 
 
 def submit_task(data, queue_connection, task=PROCESS_TASK):
-    print('queued new task:', data)
+    str_data = str(data)
+    if len(str_data) > 1000:
+        print('queued new task (truncated):', str_data[:500] + '...' + str_data[-500:])
+    else:
+        print('queued new task:', str_data)
 
     queue_connection.send_task(task, (data,),
                                queue=QUEUE_DISPATCHER[task],
