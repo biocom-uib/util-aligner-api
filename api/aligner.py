@@ -304,7 +304,7 @@ async def server_finished_alignment(mongo_db, mongo_gridfs, cache_connection, qu
 
     async def get_results_and_send_email():
         results = await get_alignment(mongo_db, mongo_gridfs, result_id)
-        await send_email_alignment(results, emails, mongo_gridfs)
+        await send_email_alignment(results, emails)
 
     if emails:
         get_event_loop().create_task(get_results_and_send_email())
@@ -328,7 +328,7 @@ async def server_finished_comparison(mongo_db, mongo_gridfs, cache_connection, j
 
     async def get_results_and_send_emails():
         comparison_results = await get_comparison(mongo_db, mongo_gridfs, result_id)
-        await send_email_comparison(comparison_results, emails, mongo_gridfs)
+        await send_email_comparison(comparison_results, emails)
 
     if emails:
         get_event_loop().create_task(get_results_and_send_emails())
