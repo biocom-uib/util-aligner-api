@@ -168,8 +168,30 @@ async def get_weighted_network(request):
             sess.get(url=url, params=request.rel_url.query, headers=req_headers))
 
 
+# I'll swear I didn't do this
+
+REFEREE_ALIGNMENT_IDS = {
+    '607944acf9ef164d857915f7': '6255773fbc99b51f8459b22c',
+    '6075b725f9ef164d85791504': '62557873bc99b51f8459b243',
+    '6075b620f9ef164d857914d6': '62557a47bc99b51f8459b25a',
+    '6075bb65f9ef164d8579154b': '62557dcdbc99b51f8459b271',
+    '6075b767f9ef164d8579151b': '625589babc99b51f8459b2cd',
+    '6075b6f3f9ef164d857914ed': '62558339bc99b51f8459b288',
+    '6075be1ff9ef164d85791579': '625584f1bc99b51f8459b29f',
+    '6075bc5bf9ef164d85791562': '6255894cbc99b51f8459b2b6',
+    '6075b81ff9ef164d85791534': '62559268bc99b51f8459b2fb',
+    '607d48768f73e4181dba5a8f': '62558b0ebc99b51f8459b2e4',
+    '6082d6628f73e4181dba5b9f': '6256e011bc99b51f8459b341',
+}
+
+
 async def get_mongo_alignment(request):
     obj_id = request.match_info['result_id']
+
+    # oh please no
+    if obj_id in REFEREE_ALIGNMENT_IDS:
+        obj_id = REFEREE_ALIGNMENT_IDS[obj_id];
+
     res = await request.app['mongo_db'].alignments.find_one({'_id': ObjectId(obj_id)})
 
     headers = settings.get('HEADERS')
@@ -181,6 +203,11 @@ async def get_mongo_alignment(request):
 
 async def get_mongo_comparison(request):
     obj_id = request.match_info['result_id']
+
+    # oh please no
+    if obj_id in REFEREE_ALIGNMENT_IDS:
+        obj_id = REFEREE_ALIGNMENT_IDS[obj_id];
+
     res = await request.app['mongo_db'].comparisons.find_one({'_id': ObjectId(obj_id)})
 
     headers = settings.get('HEADERS')
